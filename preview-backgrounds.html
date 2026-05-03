@@ -390,7 +390,13 @@
       paintGlobe(cv, PALETTES[cv.dataset.variant]);
     });
   }
-  paintAll();
+  // wait for fonts + layout before painting
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => requestAnimationFrame(paintAll));
+  } else {
+    requestAnimationFrame(paintAll);
+  }
+  window.addEventListener('load', () => setTimeout(paintAll, 100));
   window.addEventListener('resize', paintAll);
 </script>
 </body>
