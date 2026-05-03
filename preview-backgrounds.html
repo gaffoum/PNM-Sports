@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PNM Sports — Preview fonds A / B / C</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cyan: #1ab8e0;
+    --cyan-bright: #7ce3ff;
+    --text: #e7f4fa;
+    --text-dim: #8aa9bd;
+    --text-muted: #557388;
+    --line: rgba(124, 227, 255, 0.14);
+    --line-strong: rgba(124, 227, 255, 0.28);
+    --font-display: "Sora", system-ui, sans-serif;
+    --font-body: "Inter", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-body);
+    color: var(--text);
+    background: #02070d;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,h2,h3,h4 { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.01em; margin: 0; line-height: 1.05; }
+
+  .compare-bar {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(2,7,13,0.92); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+    padding: 14px 24px;
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+  }
+  .compare-bar h1 { font-size: 14px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--cyan-bright); }
+  .compare-bar .hint { font-size: 12px; color: var(--text-dim); margin-left: auto; }
+  .compare-bar a {
+    font-size: 12px; padding: 6px 12px; border-radius: 999px;
+    border: 1px solid var(--line-strong); color: var(--text); text-decoration: none;
+    font-family: var(--font-display); letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .compare-bar a:hover { border-color: var(--cyan-bright); color: var(--cyan-bright); }
+
+  .variant {
+    position: relative; isolation: isolate;
+    padding: 64px clamp(20px,4vw,56px) 80px;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+  .variant > .label {
+    display: inline-flex; align-items: center; gap: 12px;
+    padding: 8px 16px; border-radius: 999px;
+    background: rgba(26,184,224,0.10);
+    border: 1px solid var(--line-strong);
+    font-family: var(--font-display); font-weight: 600;
+    font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--cyan-bright);
+    margin-bottom: 32px;
+  }
+  .variant > .label code {
+    font-family: ui-monospace, "SF Mono", monospace; font-size: 11px;
+    color: var(--text-dim); letter-spacing: 0;
+    margin-left: 8px;
+  }
+  .variant .row {
+    display: grid; grid-template-columns: 1.2fr 1fr; gap: 48px; align-items: start;
+    max-width: 1280px; margin: 0 auto;
+  }
+  @media (max-width: 960px) { .variant .row { grid-template-columns: 1fr; } }
+
+  .hero-sample h2 {
+    font-size: clamp(36px, 5.4vw, 68px);
+    margin: 0 0 18px;
+    letter-spacing: -0.025em;
+  }
+  .hero-sample h2 .accent {
+    background: linear-gradient(135deg,#7ce3ff 0%,#1ab8e0 50%,#7ce3ff 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero-sample p.lead { font-size: 17px; color: var(--text-dim); max-width: 540px; margin: 0 0 28px; }
+  .hero-sample .ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 13px 22px; border-radius: 999px;
+    font-family: var(--font-display); font-weight: 600; font-size: 13.5px;
+    letter-spacing: 0.02em; cursor: pointer; border: 0;
+  }
+  .btn-primary { background: linear-gradient(135deg,var(--cyan),#0e8cb0); color:#03131e; box-shadow:0 14px 36px -10px rgba(26,184,224,.55);}
+  .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--line-strong); }
+
+  .cards { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-top: 36px; }
+  .service-card {
+    padding: 22px 20px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    transition: border-color .25s, transform .25s;
+  }
+  .service-card:hover { border-color: var(--line-strong); transform: translateY(-3px); }
+  .service-card .num { font-family: var(--font-display); font-size: 11px; color: var(--cyan); letter-spacing: 0.3em; }
+  .service-card h3 { font-size: 16px; margin: 14px 0 6px; }
+  .service-card p { font-size: 13.5px; color: var(--text-dim); margin: 0; line-height: 1.55; }
+
+  .globe-block {
+    position: relative; aspect-ratio: 1/1; max-width: 460px; margin: 0 auto;
+    border: 1px solid var(--line); border-radius: 18px; overflow: hidden;
+  }
+  .globe-block canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .globe-block .hint {
+    position: absolute; top: 14px; right: 14px;
+    padding: 6px 11px; border-radius: 999px;
+    border: 1px solid var(--line);
+    font-family: var(--font-display); font-size: 10.5px; letter-spacing: 0.06em;
+    color: var(--cyan-bright);
+  }
+
+  .text-test {
+    margin-top: 48px; padding: 24px;
+    border: 1px dashed var(--line-strong); border-radius: 12px;
+    max-width: 1280px; margin-left: auto; margin-right: auto;
+  }
+  .text-test h4 { font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--cyan); margin-bottom: 14px; }
+  .text-test .line { display: block; margin: 6px 0; font-size: 14.5px; }
+  .text-test .l-text { color: var(--text); }
+  .text-test .l-dim { color: var(--text-dim); }
+  .text-test .l-muted { color: var(--text-muted); font-size: 11.5px; letter-spacing: 0.18em; text-transform: uppercase; }
+  .text-test .ratio { font-family: ui-monospace, "SF Mono", monospace; font-size: 11px; color: var(--text-muted); margin-left: 10px; }
+
+  /* hex + streaks (factorisés) */
+  .hex-overlay {
+    position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='104' viewBox='0 0 120 104'><g fill='none' stroke='%237ce3ff' stroke-width='0.6' opacity='0.5'><polygon points='30,2 58,18 58,52 30,68 2,52 2,18'/><polygon points='90,2 118,18 118,52 90,68 62,52 62,18'/><polygon points='60,52 88,68 88,102 60,118 32,102 32,68'/></g></svg>");
+    background-size: 120px 104px;
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 40%,#000 20%,transparent 85%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 40%,#000 20%,transparent 85%);
+  }
+  .streaks {
+    position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background: linear-gradient(105deg,
+      transparent 0%, transparent 7%, rgba(124,227,255,0.06) 7.2%, transparent 7.5%,
+      transparent 14%, rgba(124,227,255,0.04) 14.2%, transparent 14.5%,
+      transparent 86%, rgba(124,227,255,0.05) 86.2%, transparent 86.5%,
+      transparent 93%, rgba(124,227,255,0.07) 93.2%, transparent 93.5%);
+    mix-blend-mode: screen;
+  }
+
+  /* ------- Variant A : Twilight Lift ------- */
+  .v-a {
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(26,184,224,0.18), transparent 70%),
+      radial-gradient(ellipse 60% 40% at 80% 60%, rgba(15,59,82,0.5), transparent 70%),
+      linear-gradient(180deg, #0a2540 0%, #103553 50%, #0a2540 100%);
+  }
+  .v-a .hex-overlay { opacity: 0.10; }
+  .v-a .service-card { background: linear-gradient(180deg, rgba(15,59,82,0.35), rgba(16,53,83,0.55)); }
+
+  /* ------- Variant B : Marine Hi-tech (reco) ------- */
+  .v-b {
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(26,184,224,0.20), transparent 70%),
+      radial-gradient(ellipse 60% 40% at 80% 60%, rgba(15,59,82,0.5), transparent 70%),
+      linear-gradient(180deg, #0c2c4a 0%, #14406a 50%, #0c2c4a 100%);
+  }
+  .v-b .hex-overlay { opacity: 0.12; }
+  .v-b .service-card { background: linear-gradient(180deg, rgba(20,64,106,0.45), rgba(15,59,82,0.55)); }
+
+  /* ------- Variant C : Steel Teal ------- */
+  .v-c {
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(26,184,224,0.22), transparent 70%),
+      radial-gradient(ellipse 60% 40% at 80% 60%, rgba(20,90,120,0.5), transparent 70%),
+      linear-gradient(180deg, #0f3b52 0%, #174c6b 50%, #0f3b52 100%);
+  }
+  .v-c .hex-overlay { opacity: 0.10; }
+  .v-c .service-card { background: linear-gradient(180deg, rgba(23,76,107,0.5), rgba(15,59,82,0.6)); }
+  .v-c .l-muted-fixed { color: #6b8a9f; } /* contraste ajusté */
+</style>
+</head>
+<body>
+
+<div class="compare-bar">
+  <h1>Preview · 3 directions</h1>
+  <a href="#a">A — Twilight Lift</a>
+  <a href="#b">B — Marine Hi-tech</a>
+  <a href="#c">C — Steel Teal</a>
+  <span class="hint">Scroll pour comparer · le globe est rendu en canvas avec les couleurs réelles de globe.js</span>
+</div>
+
+<!-- ============================ VARIANT A ============================ -->
+<section class="variant v-a" id="a">
+  <div class="hex-overlay"></div>
+  <div class="streaks"></div>
+  <span class="label">Direction A — Twilight Lift <code>bg #0a2540 → #103553 → #0a2540</code></span>
+
+  <div class="row">
+    <div class="hero-sample">
+      <h2>L'<span class="accent">excellence</span><br/>au service<br/>du talent.</h2>
+      <p class="lead">PNM Sports accompagne les footballeurs et footballeuses d'aujourd'hui et de demain. Un réseau international, une équipe d'experts, et une famille de joueurs.</p>
+      <div class="ctas">
+        <button class="btn btn-primary">Discuter d'un projet →</button>
+        <button class="btn btn-ghost">Découvrir la famille</button>
+      </div>
+    </div>
+    <div class="globe-block">
+      <canvas data-variant="a"></canvas>
+      <span class="hint">GLOBE 3D · cliquer-glisser</span>
+    </div>
+  </div>
+
+  <div class="cards" style="max-width:1280px;margin-left:auto;margin-right:auto;grid-template-columns:repeat(4,1fr);">
+    <div class="service-card"><span class="num">01</span><h3>Représentation</h3><p>Négociations contractuelles et gestion de carrière sur-mesure.</p></div>
+    <div class="service-card"><span class="num">02</span><h3>Recrutement</h3><p>Détection et placement dans les divisions internationales.</p></div>
+    <div class="service-card"><span class="num">03</span><h3>Développement</h3><p>Suivi performance, image et préparation extra-sportive.</p></div>
+    <div class="service-card"><span class="num">04</span><h3>Famille</h3><p>Un cercle restreint de joueurs, un accompagnement durable.</p></div>
+  </div>
+
+  <div class="text-test">
+    <h4>Test lisibilité — fond #0a2540</h4>
+    <span class="line l-text">Texte principal (#e7f4fa) — exemple de phrase normale qui doit rester ultra-lisible. <span class="ratio">~14.7:1 ✓ AAA</span></span>
+    <span class="line l-dim">Texte dim (#8aa9bd) — descriptions, leads, sous-textes secondaires. <span class="ratio">~6.7:1 ✓ AA</span></span>
+    <span class="line l-muted">LABEL MUTED (#557388) — UPPERCASE PETITE TAILLE <span class="ratio">~3.3:1 ✓ AA large</span></span>
+  </div>
+</section>
+
+<!-- ============================ VARIANT B ============================ -->
+<section class="variant v-b" id="b">
+  <div class="hex-overlay"></div>
+  <div class="streaks"></div>
+  <span class="label">Direction B — Marine Hi-tech (reco) <code>bg #0c2c4a → #14406a → #0c2c4a</code></span>
+
+  <div class="row">
+    <div class="hero-sample">
+      <h2>L'<span class="accent">excellence</span><br/>au service<br/>du talent.</h2>
+      <p class="lead">PNM Sports accompagne les footballeurs et footballeuses d'aujourd'hui et de demain. Un réseau international, une équipe d'experts, et une famille de joueurs.</p>
+      <div class="ctas">
+        <button class="btn btn-primary">Discuter d'un projet →</button>
+        <button class="btn btn-ghost">Découvrir la famille</button>
+      </div>
+    </div>
+    <div class="globe-block">
+      <canvas data-variant="b"></canvas>
+      <span class="hint">GLOBE 3D · cliquer-glisser</span>
+    </div>
+  </div>
+
+  <div class="cards" style="max-width:1280px;margin-left:auto;margin-right:auto;grid-template-columns:repeat(4,1fr);">
+    <div class="service-card"><span class="num">01</span><h3>Représentation</h3><p>Négociations contractuelles et gestion de carrière sur-mesure.</p></div>
+    <div class="service-card"><span class="num">02</span><h3>Recrutement</h3><p>Détection et placement dans les divisions internationales.</p></div>
+    <div class="service-card"><span class="num">03</span><h3>Développement</h3><p>Suivi performance, image et préparation extra-sportive.</p></div>
+    <div class="service-card"><span class="num">04</span><h3>Famille</h3><p>Un cercle restreint de joueurs, un accompagnement durable.</p></div>
+  </div>
+
+  <div class="text-test">
+    <h4>Test lisibilité — fond #0c2c4a</h4>
+    <span class="line l-text">Texte principal (#e7f4fa) — exemple de phrase normale qui doit rester ultra-lisible. <span class="ratio">~13.0:1 ✓ AAA</span></span>
+    <span class="line l-dim">Texte dim (#8aa9bd) — descriptions, leads, sous-textes secondaires. <span class="ratio">~6.0:1 ✓ AA</span></span>
+    <span class="line l-muted">LABEL MUTED (#557388) — UPPERCASE PETITE TAILLE <span class="ratio">~3.0:1 ✓ AA large</span></span>
+  </div>
+</section>
+
+<!-- ============================ VARIANT C ============================ -->
+<section class="variant v-c" id="c">
+  <div class="hex-overlay"></div>
+  <div class="streaks"></div>
+  <span class="label">Direction C — Steel Teal <code>bg #0f3b52 → #174c6b → #0f3b52</code></span>
+
+  <div class="row">
+    <div class="hero-sample">
+      <h2>L'<span class="accent">excellence</span><br/>au service<br/>du talent.</h2>
+      <p class="lead">PNM Sports accompagne les footballeurs et footballeuses d'aujourd'hui et de demain. Un réseau international, une équipe d'experts, et une famille de joueurs.</p>
+      <div class="ctas">
+        <button class="btn btn-primary">Discuter d'un projet →</button>
+        <button class="btn btn-ghost">Découvrir la famille</button>
+      </div>
+    </div>
+    <div class="globe-block">
+      <canvas data-variant="c"></canvas>
+      <span class="hint">GLOBE 3D · cliquer-glisser</span>
+    </div>
+  </div>
+
+  <div class="cards" style="max-width:1280px;margin-left:auto;margin-right:auto;grid-template-columns:repeat(4,1fr);">
+    <div class="service-card"><span class="num">01</span><h3>Représentation</h3><p>Négociations contractuelles et gestion de carrière sur-mesure.</p></div>
+    <div class="service-card"><span class="num">02</span><h3>Recrutement</h3><p>Détection et placement dans les divisions internationales.</p></div>
+    <div class="service-card"><span class="num">03</span><h3>Développement</h3><p>Suivi performance, image et préparation extra-sportive.</p></div>
+    <div class="service-card"><span class="num">04</span><h3>Famille</h3><p>Un cercle restreint de joueurs, un accompagnement durable.</p></div>
+  </div>
+
+  <div class="text-test">
+    <h4>Test lisibilité — fond #0f3b52</h4>
+    <span class="line l-text">Texte principal (#e7f4fa) — exemple de phrase normale qui doit rester ultra-lisible. <span class="ratio">~11.0:1 ✓ AAA</span></span>
+    <span class="line l-dim">Texte dim (#8aa9bd) — descriptions, leads, sous-textes secondaires. <span class="ratio">~5.1:1 ✓ AA</span></span>
+    <span class="line l-muted l-muted-fixed">LABEL MUTED ajusté #6b8a9f — UPPERCASE PETITE TAILLE <span class="ratio">~4.8:1 ✓ AA</span></span>
+  </div>
+</section>
+
+<script>
+  // Mini globe : reproduit l'océan de globe.js (3 stops radial) + un disque continent simplifié
+  // pour vérifier visuellement le contraste land/ocean sur chaque variante.
+  const PALETTES = {
+    a: { halo: 'rgba(124,227,255,0.18)', haloMid: 'rgba(15,59,82,0.4)',
+         outer: '#144062', mid: '#0e2f49', inner: '#0a2540',
+         landFill: 'rgba(124,227,255,0.16)', landStroke: 'rgba(124,227,255,0.55)' },
+    b: { halo: 'rgba(124,227,255,0.20)', haloMid: 'rgba(15,59,82,0.4)',
+         outer: '#1a4f70', mid: '#133b58', inner: '#0c2c4a',
+         landFill: 'rgba(124,227,255,0.18)', landStroke: 'rgba(124,227,255,0.6)' },
+    c: { halo: 'rgba(124,227,255,0.22)', haloMid: 'rgba(20,90,120,0.45)',
+         outer: '#205f82', mid: '#18506e', inner: '#0f3b52',
+         landFill: 'rgba(124,227,255,0.20)', landStroke: 'rgba(124,227,255,0.65)' }
+  };
+
+  function paintGlobe(canvas, p) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    const w = rect.width, h = rect.height;
+    const cx = w/2, cy = h/2;
+    const R = Math.min(w,h) * 0.42;
+
+    // halo
+    let g = ctx.createRadialGradient(cx, cy, R*0.6, cx, cy, R*1.6);
+    g.addColorStop(0, p.halo);
+    g.addColorStop(0.55, p.haloMid);
+    g.addColorStop(1, 'rgba(4,16,31,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,w,h);
+
+    // ocean disc — same 3-stop pattern as globe.js
+    let og = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+    og.addColorStop(0, p.outer);
+    og.addColorStop(0.55, p.mid);
+    og.addColorStop(1, p.inner);
+    ctx.fillStyle = og;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.fill();
+
+    // rim
+    ctx.strokeStyle = 'rgba(124,227,255,0.35)';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.stroke();
+
+    // graticule
+    ctx.strokeStyle = 'rgba(124,227,255,0.13)';
+    ctx.lineWidth = 0.4;
+    for (let lat = -60; lat <= 60; lat += 30) {
+      const r = R * Math.cos(lat * Math.PI/180);
+      const y = cy - R * Math.sin(lat * Math.PI/180) * 0.4;
+      ctx.beginPath(); ctx.ellipse(cx, y, r, r*0.18, 0, 0, Math.PI*2); ctx.stroke();
+    }
+    for (let lon = 0; lon < 180; lon += 30) {
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, R * Math.abs(Math.cos(lon*Math.PI/180)), R, 0, 0, Math.PI*2);
+      ctx.stroke();
+    }
+
+    // mock continents — 3 silhouettes pour juger le contraste land/ocean
+    ctx.fillStyle = p.landFill;
+    ctx.strokeStyle = p.landStroke;
+    ctx.lineWidth = 0.6;
+    const continents = [
+      [[-0.25,-0.10],[-0.05,-0.18],[0.10,-0.05],[0.05,0.15],[-0.15,0.20],[-0.30,0.05]],
+      [[0.18,-0.30],[0.32,-0.22],[0.36,-0.05],[0.28,0.08],[0.20,-0.05]],
+      [[-0.45,0.10],[-0.30,0.18],[-0.32,0.30],[-0.45,0.32]]
+    ];
+    continents.forEach(poly => {
+      ctx.beginPath();
+      poly.forEach(([dx,dy], i) => {
+        const x = cx + dx * R * 1.4;
+        const y = cy + dy * R * 1.4;
+        if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      });
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    });
+
+    // glow node
+    ctx.fillStyle = '#7ce3ff';
+    ctx.shadowColor = '#7ce3ff'; ctx.shadowBlur = 14;
+    ctx.beginPath(); ctx.arc(cx + R*0.15, cy - R*0.05, 3.5, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  function paintAll() {
+    document.querySelectorAll('canvas[data-variant]').forEach(cv => {
+      paintGlobe(cv, PALETTES[cv.dataset.variant]);
+    });
+  }
+  paintAll();
+  window.addEventListener('resize', paintAll);
+</script>
+</body>
+</html>
