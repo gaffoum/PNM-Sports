@@ -213,9 +213,9 @@
 
     // Globe sphere with shading
     const oceanGrad = ctx.createRadialGradient(cx - R*0.32, cy - R*0.38, R*0.05, cx, cy, R);
-    oceanGrad.addColorStop(0, '#0e2f49');
-    oceanGrad.addColorStop(0.55, '#08233b');
-    oceanGrad.addColorStop(1, '#04101f');
+    oceanGrad.addColorStop(0, '#144062');
+    oceanGrad.addColorStop(0.55, '#0e2f49');
+    oceanGrad.addColorStop(1, '#0a2540');
     ctx.fillStyle = oceanGrad;
     ctx.beginPath();
     ctx.arc(cx, cy, R, 0, Math.PI*2);
