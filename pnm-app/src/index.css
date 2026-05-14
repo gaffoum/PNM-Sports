@@ -1,0 +1,57 @@
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Inter:wght@400;500;600&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root { height: 100%; }
+  body {
+    @apply bg-bg-0 text-ink font-body antialiased;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display font-bold tracking-tight;
+  }
+}
+
+@layer components {
+  .panel {
+    background: linear-gradient(180deg, rgba(15, 59, 82, 0.18), rgba(10, 37, 64, 0.35));
+    @apply border border-line rounded-card;
+  }
+  .panel-hover { @apply hover:border-line-strong transition-colors; }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-semibold text-sm
+           rounded-lg px-4 py-2 transition-all duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed
+           focus:outline-none focus:ring-2 focus:ring-cyan-bright/40;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #1ab8e0, #0e8cb0);
+    @apply text-bg-0;
+  }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-ghost { @apply text-ink-dim hover:text-cyan-bright hover:bg-line/30; }
+  .btn-danger { @apply bg-red-500/20 text-red-300 hover:bg-red-500/30 border border-red-500/30; }
+  .btn-outline { @apply border border-line-strong text-ink hover:border-cyan-bright; }
+
+  .input {
+    @apply w-full px-3 py-2 text-sm bg-bg-1 border border-line rounded-lg
+           text-ink placeholder:text-ink-muted
+           focus:outline-none focus:border-cyan focus:ring-1 focus:ring-cyan/40
+           disabled:opacity-60;
+  }
+  .label { @apply block text-xs font-semibold text-ink-dim mb-1.5 uppercase tracking-wider; }
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px]
+           uppercase tracking-wider font-semibold border;
+  }
+  .badge-joueur { @apply bg-cyan-bright/10 text-cyan-bright border-cyan-bright/30; }
+  .badge-prospect { @apply bg-amber-400/10 text-amber-300 border-amber-400/30; }
+  .badge-admin { @apply bg-violet-400/15 text-violet-200 border-violet-400/30; }
+  .badge-agent { @apply bg-cyan/15 text-cyan-bright border-cyan/40; }
+}
+
+.reactEasyCrop_Container { background: #04101f; }
