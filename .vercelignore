@@ -1,3 +1,0 @@
-# L'espace agents (pnm-app) est déployé séparément sur Vercel.
-# On l'exclut du déploiement de la landing page (racine du repo).
-pnm-app

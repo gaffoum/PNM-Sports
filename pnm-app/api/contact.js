@@ -1,19 +1,42 @@
 // Fonction serverless Vercel : reçoit le formulaire de contact de la landing
-// et envoie l'e-mail via l'API Resend.
+// page (hébergée sur GitHub Pages) et envoie l'e-mail via l'API Resend.
 //
-// Variables d'environnement attendues (à définir dans Vercel) :
-//   RESEND_API_KEY  (obligatoire)  — clé API Resend
-//   CONTACT_TO      (optionnel)    — destinataire, défaut: contact@pnmsport.com
-//   CONTACT_FROM    (optionnel)    — expéditeur sur le domaine vérifié,
+// Appel cross-origin : la landing fait un POST vers
+//   https://pnm-sports.vercel.app/api/contact
+//
+// Variables d'environnement (à définir dans le projet Vercel) :
+//   RESEND_API_KEY   (obligatoire) — clé API Resend
+//   CONTACT_TO       (optionnel)   — destinataire, défaut: contact@pnmsport.com
+//   CONTACT_FROM     (optionnel)   — expéditeur sur le domaine vérifié,
 //                                    défaut: "PNM Sports <contact@pnmsport.com>"
+//   ALLOWED_ORIGINS  (optionnel)   — origines autorisées (séparées par des virgules),
+//                                    défaut: https://gaffoum.github.io
+
+const DEFAULT_ORIGINS = "https://gaffoum.github.io";
 
 export default async function handler(req, res) {
+  // --- CORS ---
+  const allowed = (process.env.ALLOWED_ORIGINS || DEFAULT_ORIGINS)
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const origin = req.headers.origin;
+  if (origin && allowed.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  }
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Méthode non autorisée." });
   }
 
-  // Vercel parse le JSON automatiquement, mais on tolère une string brute.
+  // --- Corps de la requête ---
   let body = req.body;
   if (typeof body === "string") {
     try { body = JSON.parse(body); } catch { body = {}; }
