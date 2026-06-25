@@ -1202,12 +1202,31 @@
   // ============== CONTACT FORM ==============
   const contactForm = document.getElementById("contactForm");
   if (contactForm) {
-    contactForm.addEventListener("submit", (e) => {
+    contactForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      // TODO: en production, brancher Resend ici (fetch POST vers /api/contact)
       const status = document.getElementById("contactStatus");
-      if (status) status.textContent = "✓ Merci, votre message a bien été envoyé. Nous vous répondrons sous 48 h.";
-      contactForm.reset();
+      const submitBtn = contactForm.querySelector("button[type='submit']");
+      const payload = {
+        nom: document.getElementById("f-nom").value.trim(),
+        email: document.getElementById("f-email").value.trim(),
+        message: document.getElementById("f-msg").value.trim(),
+      };
+      if (status) status.textContent = "Envoi en cours…";
+      if (submitBtn) submitBtn.disabled = true;
+      try {
+        const res = await fetch("/api/contact", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error("send failed");
+        if (status) status.textContent = "✓ Merci, votre message a bien été envoyé. Nous vous répondrons sous 48 h.";
+        contactForm.reset();
+      } catch (err) {
+        if (status) status.textContent = "✗ Une erreur est survenue. Réessayez ou écrivez-nous à contact@pnmsport.com.";
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
     });
   }
 
