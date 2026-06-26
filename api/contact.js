@@ -4,6 +4,9 @@
 // Appel cross-origin : la landing fait un POST vers
 //   https://pnm-sports.vercel.app/api/contact
 //
+// Écrite en CommonJS (module.exports) pour fonctionner sans package.json
+// dédié, le projet étant buildé depuis la racine du dépôt.
+//
 // Variables d'environnement (à définir dans le projet Vercel) :
 //   RESEND_API_KEY   (obligatoire) — clé API Resend
 //   CONTACT_TO       (optionnel)   — destinataire, défaut: contact@pnmsport.com
@@ -14,7 +17,7 @@
 
 const DEFAULT_ORIGINS = "https://gaffoum.github.io";
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // --- CORS ---
   const allowed = (process.env.ALLOWED_ORIGINS || DEFAULT_ORIGINS)
     .split(",")
@@ -41,9 +44,10 @@ export default async function handler(req, res) {
   if (typeof body === "string") {
     try { body = JSON.parse(body); } catch { body = {}; }
   }
-  const nom = (body?.nom || "").toString().trim();
-  const email = (body?.email || "").toString().trim();
-  const message = (body?.message || "").toString().trim();
+  body = body || {};
+  const nom = (body.nom || "").toString().trim();
+  const email = (body.email || "").toString().trim();
+  const message = (body.message || "").toString().trim();
 
   if (!nom || !email || !message) {
     return res.status(400).json({ error: "Champs requis manquants." });
@@ -91,4 +95,4 @@ export default async function handler(req, res) {
     console.error("Contact handler error", err);
     return res.status(500).json({ error: "Erreur serveur." });
   }
-}
+};
