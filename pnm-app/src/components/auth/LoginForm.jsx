@@ -44,11 +44,8 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} className="w-full max-w-md panel p-8 space-y-5">
-      <header className="text-center space-y-1">
-        <div className="inline-flex items-center gap-2 text-cyan-bright text-[10px] tracking-[0.4em] uppercase">
-          <span className="w-2 h-2 rounded-full bg-cyan-bright shadow-[0_0_10px_var(--tw-shadow-color)] shadow-cyan-bright" />
-          PNM Sports
-        </div>
+      <header className="text-center space-y-3">
+        <img src="/logo-pnm.png" alt="PNM Sports" className="mx-auto h-20 w-auto select-none" draggable={false} />
         <h1 className="text-2xl">Espace agents</h1>
         <p className="text-sm text-ink-dim">Connecte-toi pour gérer joueurs et prospects.</p>
       </header>
