@@ -1,10 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "cd pnm-app && npm install",
-  "buildCommand": "cd pnm-app && npm run build",
-  "outputDirectory": "pnm-app/dist",
+  "buildCommand": "bash scripts/build-vercel.sh",
+  "outputDirectory": "site",
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/login", "destination": "/agent/index.html" },
+    { "source": "/reset-password", "destination": "/agent/index.html" },
+    { "source": "/dashboard", "destination": "/agent/index.html" },
+    { "source": "/profile", "destination": "/agent/index.html" },
+    { "source": "/players", "destination": "/agent/index.html" },
+    { "source": "/players/:path*", "destination": "/agent/index.html" }
   ],
   "headers": [
     {
