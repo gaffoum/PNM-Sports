@@ -7,7 +7,7 @@ import { useAuth } from "../hooks/useAuth";
 import { logActivity } from "../lib/logActivity";
 import {
   STEPS, KANBAN_STEPS, TERMINAL_STEPS,
-  statutForStep, stepLabel, stepShort, stepCardClass,
+  statutForStep, stepLabel, stepShort, stepCardClass, stepDotClass,
 } from "../lib/recruitment";
 
 const SELECT_FIELDS =
@@ -73,7 +73,10 @@ function Column({ step, players, onMove }) {
   return (
     <div className="min-w-0 flex flex-col">
       <div className="flex items-center justify-between gap-1 px-1 pb-2 mb-2 border-b border-line">
-        <span className="text-xs font-semibold uppercase tracking-wide text-ink-dim whitespace-nowrap truncate" title={step.label}>{stepShort(step.key)}</span>
+        <span className="flex items-center gap-1.5 min-w-0">
+          <span className={`w-2 h-2 rounded-full shrink-0 ${stepDotClass(step.key)}`} />
+          <span className="text-xs font-semibold uppercase tracking-wide text-ink-dim whitespace-nowrap truncate" title={step.label}>{stepShort(step.key)}</span>
+        </span>
         <span className="text-[10px] text-ink-muted bg-bg-1 border border-line rounded-full px-2 py-0.5 shrink-0">{players.length}</span>
       </div>
       <div className="space-y-2 flex-1 min-h-[40px]">

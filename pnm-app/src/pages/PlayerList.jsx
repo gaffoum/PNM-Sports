@@ -3,9 +3,10 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useReactTable, getCoreRowModel, flexRender } from "@tanstack/react-table";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
-import { ChevronLeft, ChevronRight, Download, Plus, ArrowUpDown, FileSpreadsheet } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Plus, ArrowUpDown, FileSpreadsheet, UserCheck } from "lucide-react";
 import { usePlayers } from "../hooks/usePlayers";
 import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "../hooks/useAuth";
 import PlayerSearch from "../components/players/PlayerSearch";
 import { calcAge, formatDateFr, formatMoney } from "../lib/utils";
 import { STEPS, stepLabel, stepShort, stepBadgeClass } from "../lib/recruitment";
@@ -13,12 +14,17 @@ import { STEPS, stepLabel, stepShort, stepBadgeClass } from "../lib/recruitment"
 const PAGE_SIZE = 20;
 
 const TONE_UI = {
-  all:   { dot: "bg-ink-dim",     num: "text-ink",         active: "border-ink-dim ring-ink-dim/30" },
-  blue:  { dot: "bg-blue-400",    num: "text-blue-300",    active: "border-blue-400 ring-blue-400/40" },
-  cyan:  { dot: "bg-cyan-bright", num: "text-cyan-bright", active: "border-cyan-bright ring-cyan-bright/40" },
-  amber: { dot: "bg-amber-300",   num: "text-amber-300",   active: "border-amber-400 ring-amber-400/40" },
-  green: { dot: "bg-emerald-300", num: "text-emerald-300", active: "border-emerald-400 ring-emerald-400/40" },
-  red:   { dot: "bg-red-300",     num: "text-red-300",     active: "border-red-400 ring-red-400/40" },
+  all:     { dot: "bg-ink-dim",     num: "text-ink",         active: "border-ink-dim ring-ink-dim/30" },
+  sky:     { dot: "bg-sky-400",     num: "text-sky-300",     active: "border-sky-400 ring-sky-400/40" },
+  indigo:  { dot: "bg-indigo-400",  num: "text-indigo-300",  active: "border-indigo-400 ring-indigo-400/40" },
+  teal:    { dot: "bg-teal-400",    num: "text-teal-300",    active: "border-teal-400 ring-teal-400/40" },
+  amber:   { dot: "bg-amber-400",   num: "text-amber-300",   active: "border-amber-400 ring-amber-400/40" },
+  orange:  { dot: "bg-orange-400",  num: "text-orange-300",  active: "border-orange-400 ring-orange-400/40" },
+  fuchsia: { dot: "bg-fuchsia-400", num: "text-fuchsia-300", active: "border-fuchsia-400 ring-fuchsia-400/40" },
+  lime:    { dot: "bg-lime-400",    num: "text-lime-300",    active: "border-lime-400 ring-lime-400/40" },
+  violet:  { dot: "bg-violet-400",  num: "text-violet-300",  active: "border-violet-400 ring-violet-400/40" },
+  emerald: { dot: "bg-emerald-400", num: "text-emerald-300", active: "border-emerald-400 ring-emerald-400/40" },
+  red:     { dot: "bg-red-400",     num: "text-red-300",     active: "border-red-400 ring-red-400/40" },
 };
 
 function StepCard({ tone, label, value, active, onClick }) {
@@ -40,6 +46,7 @@ function StepCard({ tone, label, value, active, onClick }) {
 
 export default function PlayerList() {
   const nav = useNavigate();
+  const { agent } = useAuth();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({});
@@ -79,6 +86,12 @@ export default function PlayerList() {
   function setStep(v) {
     setPage(0);
     setFilters((f) => ({ ...f, recruitment_step: v || undefined }));
+  }
+
+  const mine = !!agent?.id && filters.agent_referent === agent.id;
+  function toggleMine() {
+    setPage(0);
+    setFilters((f) => ({ ...f, agent_referent: mine ? undefined : agent?.id }));
   }
 
   function toggleSort(column) {
@@ -180,6 +193,9 @@ export default function PlayerList() {
           <p className="text-ink-dim text-sm">{count} fiche{count !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex items-center gap-2">
+          <button className={`btn ${mine ? "btn-primary" : "btn-outline"}`} onClick={toggleMine}>
+            <UserCheck className="w-4 h-4" />Mes joueurs
+          </button>
           <button className="btn btn-outline" onClick={exportCsv}><Download className="w-4 h-4" />CSV</button>
           <button className="btn btn-outline" onClick={exportXlsx}><FileSpreadsheet className="w-4 h-4" />Excel</button>
           <Link to="/players/new" className="btn btn-primary"><Plus className="w-4 h-4" />Ajouter</Link>
