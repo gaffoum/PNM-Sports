@@ -6,25 +6,26 @@ import { useAuth } from "../hooks/useAuth";
 import { formatDateFr } from "../lib/utils";
 import { describeActivity } from "../lib/activityLabels";
 
-function StatCard({ icon: Icon, label, value, tone = "cyan" }) {
+function StatCard({ icon: Icon, label, value, tone = "cyan", to }) {
   const toneCls = {
     cyan: "text-cyan-bright",
     amber: "text-amber-300",
     violet: "text-violet-300",
   }[tone];
-  return (
-    <div className="panel p-5">
-      <div className="flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-lg bg-bg-1 border border-line grid place-items-center ${toneCls}`}>
-          <Icon className="w-5 h-5" />
-        </div>
-        <div>
-          <div className="text-[10px] uppercase tracking-[0.18em] text-ink-muted">{label}</div>
-          <div className="font-display font-bold text-3xl text-ink">{value}</div>
-        </div>
+  const inner = (
+    <div className="flex items-center gap-3">
+      <div className={`w-10 h-10 rounded-lg bg-bg-1 border border-line grid place-items-center ${toneCls}`}>
+        <Icon className="w-5 h-5" />
+      </div>
+      <div>
+        <div className="text-[10px] uppercase tracking-[0.18em] text-ink-muted">{label}</div>
+        <div className="font-display font-bold text-3xl text-ink">{value}</div>
       </div>
     </div>
   );
+  return to
+    ? <Link to={to} className="panel panel-hover p-5 block">{inner}</Link>
+    : <div className="panel p-5">{inner}</div>;
 }
 
 export default function Dashboard() {
@@ -57,6 +58,12 @@ export default function Dashboard() {
     return () => { active = false; };
   }, []);
 
+  const sixMoStr = (() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 6);
+    return d.toISOString().slice(0, 10);
+  })();
+
   return (
     <div className="space-y-8">
       <header className="flex items-end justify-between flex-wrap gap-3">
@@ -67,9 +74,9 @@ export default function Dashboard() {
       </header>
 
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard icon={UserCheck} label="Joueurs signés" value={loading ? "—" : counts.joueurs} tone="cyan" />
-        <StatCard icon={UserSearch} label="Prospects suivis" value={loading ? "—" : counts.prospects} tone="violet" />
-        <StatCard icon={AlertTriangle} label="Contrats < 6 mois" value={loading ? "—" : counts.expirent} tone="amber" />
+        <StatCard icon={UserCheck} label="Joueurs signés" value={loading ? "—" : counts.joueurs} tone="cyan" to="/players?statut=joueur" />
+        <StatCard icon={UserSearch} label="Prospects suivis" value={loading ? "—" : counts.prospects} tone="violet" to="/players?statut=prospect" />
+        <StatCard icon={AlertTriangle} label="Contrats < 6 mois" value={loading ? "—" : counts.expirent} tone="amber" to={`/players?fin_contrat_avant=${sixMoStr}`} />
       </section>
 
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">

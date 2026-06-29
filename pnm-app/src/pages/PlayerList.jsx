@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useReactTable, getCoreRowModel, flexRender } from "@tanstack/react-table";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
@@ -8,28 +8,32 @@ import { usePlayers } from "../hooks/usePlayers";
 import { supabase } from "../lib/supabaseClient";
 import PlayerSearch from "../components/players/PlayerSearch";
 import { calcAge, formatDateFr, formatMoney } from "../lib/utils";
-import { stepLabel, stepBadgeClass } from "../lib/recruitment";
+import { STEPS, stepLabel, stepShort, stepBadgeClass } from "../lib/recruitment";
 
 const PAGE_SIZE = 20;
 
-const TONES = {
-  all:      { dot: "bg-ink-dim",     num: "text-ink",         active: "border-ink-dim ring-ink-dim/30" },
-  joueur:   { dot: "bg-cyan-bright", num: "text-cyan-bright", active: "border-cyan-bright ring-cyan-bright/40" },
-  prospect: { dot: "bg-amber-300",   num: "text-amber-300",   active: "border-amber-400 ring-amber-400/40" },
+const TONE_UI = {
+  all:   { dot: "bg-ink-dim",     num: "text-ink",         active: "border-ink-dim ring-ink-dim/30" },
+  blue:  { dot: "bg-blue-400",    num: "text-blue-300",    active: "border-blue-400 ring-blue-400/40" },
+  cyan:  { dot: "bg-cyan-bright", num: "text-cyan-bright", active: "border-cyan-bright ring-cyan-bright/40" },
+  amber: { dot: "bg-amber-300",   num: "text-amber-300",   active: "border-amber-400 ring-amber-400/40" },
+  green: { dot: "bg-emerald-300", num: "text-emerald-300", active: "border-emerald-400 ring-emerald-400/40" },
+  red:   { dot: "bg-red-300",     num: "text-red-300",     active: "border-red-400 ring-red-400/40" },
 };
 
-function StatutCard({ tone, label, value, active, onClick }) {
-  const c = TONES[tone];
+function StepCard({ tone, label, value, active, onClick }) {
+  const c = TONE_UI[tone] ?? TONE_UI.all;
   return (
     <button
       onClick={onClick}
-      className={`panel p-4 text-left transition border ${active ? `${c.active} ring-1` : "border-line hover:border-line-strong"}`}
+      title={label}
+      className={`panel px-3 py-2.5 text-left transition border ${active ? `${c.active} ring-1` : "border-line hover:border-line-strong"}`}
     >
-      <div className="flex items-center gap-2">
-        <span className={`w-2.5 h-2.5 rounded-full ${c.dot}`} />
-        <span className="text-[11px] uppercase tracking-wider text-ink-muted">{label}</span>
+      <div className="flex items-center gap-1.5">
+        <span className={`w-2 h-2 rounded-full shrink-0 ${c.dot}`} />
+        <span className="text-[10px] uppercase tracking-wider text-ink-muted truncate">{label}</span>
       </div>
-      <div className={`font-display font-bold text-2xl mt-1 ${c.num}`}>{value}</div>
+      <div className={`font-display font-bold text-xl mt-0.5 ${c.num}`}>{value}</div>
     </button>
   );
 }
@@ -43,22 +47,38 @@ export default function PlayerList() {
 
   const { rows, count, loading } = usePlayers({ page, pageSize: PAGE_SIZE, search, filters, sort });
 
-  const [counts, setCounts] = useState({ joueur: 0, prospect: 0 });
+  // Filtres initiaux depuis l'URL (ex: clic depuis le tableau de bord)
+  const [searchParams] = useSearchParams();
+  const seeded = useRef(false);
+  useEffect(() => {
+    if (seeded.current) return;
+    seeded.current = true;
+    const seed = {};
+    for (const k of ["statut", "recruitment_step", "poste", "nationalite", "club", "fin_contrat_avant"]) {
+      const v = searchParams.get(k);
+      if (v) seed[k] = v;
+    }
+    if (Object.keys(seed).length) setFilters(seed);
+  }, [searchParams]);
+
+  // Compteur par étape de recrutement
+  const [stepCounts, setStepCounts] = useState({});
   useEffect(() => {
     let active = true;
     (async () => {
-      const [{ count: j }, { count: p }] = await Promise.all([
-        supabase.from("players").select("id", { count: "exact", head: true }).eq("statut", "joueur"),
-        supabase.from("players").select("id", { count: "exact", head: true }).eq("statut", "prospect"),
-      ]);
-      if (active) setCounts({ joueur: j ?? 0, prospect: p ?? 0 });
+      const { data } = await supabase.from("players").select("recruitment_step");
+      if (!active) return;
+      const tally = {};
+      (data ?? []).forEach((r) => { tally[r.recruitment_step] = (tally[r.recruitment_step] ?? 0) + 1; });
+      setStepCounts(tally);
     })();
     return () => { active = false; };
   }, []);
+  const totalCount = Object.values(stepCounts).reduce((a, b) => a + b, 0);
 
-  function setStatut(v) {
+  function setStep(v) {
     setPage(0);
-    setFilters((f) => ({ ...f, statut: v || undefined }));
+    setFilters((f) => ({ ...f, recruitment_step: v || undefined }));
   }
 
   function toggleSort(column) {
@@ -166,13 +186,14 @@ export default function PlayerList() {
         </div>
       </header>
 
-      <section className="grid grid-cols-3 gap-3">
-        <StatutCard tone="all" label="Tous" value={counts.joueur + counts.prospect}
-          active={!filters.statut} onClick={() => setStatut(undefined)} />
-        <StatutCard tone="joueur" label="Joueurs signés" value={counts.joueur}
-          active={filters.statut === "joueur"} onClick={() => setStatut(filters.statut === "joueur" ? undefined : "joueur")} />
-        <StatutCard tone="prospect" label="Prospects" value={counts.prospect}
-          active={filters.statut === "prospect"} onClick={() => setStatut(filters.statut === "prospect" ? undefined : "prospect")} />
+      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2.5">
+        <StepCard tone="all" label="Tous" value={totalCount}
+          active={!filters.recruitment_step} onClick={() => setStep(undefined)} />
+        {STEPS.map((st) => (
+          <StepCard key={st.key} tone={st.tone} label={stepShort(st.key)} value={stepCounts[st.key] ?? 0}
+            active={filters.recruitment_step === st.key}
+            onClick={() => setStep(filters.recruitment_step === st.key ? undefined : st.key)} />
+        ))}
       </section>
 
       <PlayerSearch search={search} setSearch={setSearch} filters={filters} setFilters={setFilters} />
