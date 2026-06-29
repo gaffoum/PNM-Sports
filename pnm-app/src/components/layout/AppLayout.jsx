@@ -33,9 +33,7 @@ export default function AppLayout() {
       <header className="border-b border-line bg-bg-1/70 backdrop-blur sticky top-0 z-30">
         <div className="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan to-teal-mid grid place-items-center font-display font-bold text-bg-0 text-sm">
-              P
-            </div>
+            <img src={`${import.meta.env.BASE_URL}logo-pnm.png`} alt="PNM Sports" className="w-9 h-9 rounded-lg object-contain" />
             <div className="leading-tight">
               <div className="font-display font-bold text-sm tracking-[0.18em]">PNM SPORTS</div>
               <div className="text-[9px] tracking-[0.3em] text-cyan-bright">ESPACE AGENTS</div>
