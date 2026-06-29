@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { UserPlus, Save, ShieldCheck } from "lucide-react";
+import { UserPlus, Save, ShieldCheck, Search } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import { PERMISSIONS } from "../lib/permissions";
 
@@ -9,6 +9,7 @@ export default function Agents() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ prenom: "", nom: "", email: "", role: "agent", password: "" });
   const [creating, setCreating] = useState(false);
+  const [q, setQ] = useState("");
 
   async function load() {
     setLoading(true);
@@ -91,11 +92,20 @@ export default function Agents() {
       </form>
 
       {/* Liste des agents */}
+      {!loading && (
+        <div className="relative max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
+          <input className="input pl-10" placeholder="Rechercher un agent (nom, email)…" value={q} onChange={(e) => setQ(e.target.value)} />
+        </div>
+      )}
+
       {loading ? (
         <div className="text-ink-dim">Chargement…</div>
       ) : (
         <div className="space-y-3">
-          {agents.map((ag) => {
+          {agents
+            .filter((a) => `${a.prenom} ${a.nom} ${a.email}`.toLowerCase().includes(q.trim().toLowerCase()))
+            .map((ag) => {
             const isAdmin = ag.role === "admin";
             return (
               <div key={ag.id} className="panel p-5 space-y-4">
