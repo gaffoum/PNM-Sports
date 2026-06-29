@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
 function NavItem({ to, icon: Icon, children, end }) {
@@ -20,7 +20,7 @@ function NavItem({ to, icon: Icon, children, end }) {
 }
 
 export default function AppLayout() {
-  const { agent, signOut } = useAuth();
+  const { agent, isAdmin, signOut } = useAuth();
   const nav = useNavigate();
 
   async function handleSignOut() {
@@ -44,6 +44,7 @@ export default function AppLayout() {
             <NavItem to="/players" icon={Users}>Joueurs</NavItem>
             <NavItem to="/recrutement" icon={LayoutGrid}>Prospection</NavItem>
             <NavItem to="/players/new" icon={UserPlus}>Ajouter</NavItem>
+            {isAdmin && <NavItem to="/agents" icon={ShieldCheck}>Agents</NavItem>}
           </nav>
           <div className="flex items-center gap-2">
             <div className="text-right leading-tight hidden sm:block">

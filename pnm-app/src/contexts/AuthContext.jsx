@@ -1,5 +1,6 @@
 import { createContext, useEffect, useMemo, useState, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { hasPermission } from "../lib/permissions";
 
 export const AuthContext = createContext(null);
 
@@ -12,7 +13,7 @@ export function AuthProvider({ children }) {
     if (!userId) { setAgent(null); return; }
     const { data, error } = await supabase
       .from("agents")
-      .select("id, nom, prenom, email, role, created_at")
+      .select("id, nom, prenom, email, role, permissions, actif, created_at")
       .eq("id", userId)
       .maybeSingle();
     if (error) {
@@ -65,6 +66,7 @@ export function AuthProvider({ children }) {
     user: session?.user ?? null,
     agent,
     isAdmin: agent?.role === "admin",
+    can: (key) => hasPermission(agent, key),
     isAuthenticated: !!session,
     loading,
     signIn,
