@@ -17,7 +17,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Toaster theme="dark" position="top-right" richColors />
+        <Toaster theme="dark" position="bottom-right" richColors />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
