@@ -13,7 +13,7 @@ export function AuthProvider({ children }) {
     if (!userId) { setAgent(null); return; }
     const { data, error } = await supabase
       .from("agents")
-      .select("id, nom, prenom, email, role, permissions, actif, created_at")
+      .select("*")
       .eq("id", userId)
       .maybeSingle();
     if (error) {

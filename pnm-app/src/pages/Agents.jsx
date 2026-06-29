@@ -14,7 +14,7 @@ export default function Agents() {
     setLoading(true);
     const { data, error } = await supabase
       .from("agents")
-      .select("id, nom, prenom, email, role, actif, permissions")
+      .select("*")
       .order("nom");
     if (error) toast.error(error.message);
     else setAgents(data ?? []);
