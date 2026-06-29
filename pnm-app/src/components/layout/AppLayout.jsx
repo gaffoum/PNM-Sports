@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, UserPlus, LogOut, User } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
 function NavItem({ to, icon: Icon, children, end }) {
@@ -44,6 +44,7 @@ export default function AppLayout() {
           <nav className="flex items-center gap-1">
             <NavItem to="/dashboard" icon={LayoutDashboard} end>Tableau de bord</NavItem>
             <NavItem to="/players" icon={Users}>Joueurs</NavItem>
+            <NavItem to="/recrutement" icon={LayoutGrid}>Recrutement</NavItem>
             <NavItem to="/players/new" icon={UserPlus}>Ajouter</NavItem>
           </nav>
           <div className="flex items-center gap-2">

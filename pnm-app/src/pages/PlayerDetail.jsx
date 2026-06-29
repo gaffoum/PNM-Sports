@@ -8,6 +8,7 @@ import { getPlayerById, getPlayerStats, getPlayerDocuments } from "../hooks/useP
 import { useAuth } from "../hooks/useAuth";
 import { calcAge, formatDateFr, formatMoney } from "../lib/utils";
 import { logActivity } from "../lib/logActivity";
+import { STEPS, statutForStep, stepLabel, stepBadgeClass } from "../lib/recruitment";
 import PlayerForm from "../components/players/PlayerForm";
 import PhotoCropper from "../components/players/PhotoCropper";
 import StatsTable from "../components/players/StatsTable";
@@ -94,6 +95,20 @@ export default function PlayerDetail() {
     nav("/players");
   }
 
+  async function changeStep(newStep) {
+    const statut = statutForStep(newStep);
+    const { data, error } = await supabase
+      .from("players")
+      .update({ recruitment_step: newStep, statut })
+      .eq("id", player.id)
+      .select()
+      .single();
+    if (error) { toast.error(error.message); return; }
+    setPlayer({ ...player, ...data, agent: player.agent });
+    logActivity(agent.id, player.id, "update_step", { step: newStep });
+    toast.success(`Étape : ${stepLabel(newStep)}`);
+  }
+
   async function exportPdf() {
     setPdfBusy(true);
     try {
@@ -158,12 +173,21 @@ export default function PlayerDetail() {
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-3xl">{player.prenom} {player.nom}</h1>
             <span className={`badge ${player.statut === "joueur" ? "badge-joueur" : "badge-prospect"}`}>{player.statut}</span>
+            <span className={`badge ${stepBadgeClass(player.recruitment_step)}`}>{stepLabel(player.recruitment_step)}</span>
           </div>
           <p className="text-ink-dim mt-1">
             {player.poste ?? "—"} · {player.nationalite ?? "—"} · {age ?? "—"} ans
             {player.club_actuel && <> · {player.club_actuel}</>}
           </p>
-          <div className="mt-4 flex gap-2 flex-wrap">
+          <div className="mt-4 flex gap-2 flex-wrap items-center">
+            <label className="text-[11px] uppercase tracking-wider text-ink-muted">Étape</label>
+            <select
+              className="input w-auto py-1.5"
+              value={player.recruitment_step ?? "premiere_observation"}
+              onChange={(e) => changeStep(e.target.value)}
+            >
+              {STEPS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+            </select>
             <button onClick={() => setEditing(true)} className="btn btn-outline"><Pencil className="w-4 h-4" />Modifier</button>
             <button onClick={exportPdf} className="btn btn-outline" disabled={pdfBusy}><FileText className="w-4 h-4" />{pdfBusy ? "PDF…" : "Exporter en PDF"}</button>
             <button onClick={deletePlayer} className="btn btn-danger"><Trash2 className="w-4 h-4" />Supprimer</button>

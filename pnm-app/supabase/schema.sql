@@ -18,6 +18,14 @@ do $$ begin
   create type public.player_statut as enum ('joueur', 'prospect');
 exception when duplicate_object then null; end $$;
 
+do $$ begin
+  create type public.recruitment_step as enum (
+    'premiere_observation', 'contre_observation', 'observation_decisive',
+    'veille', 'prise_contact', 'rdv1', 'reflexion', 'rdv2',
+    'accepte', 'ne_pas_suivre'
+  );
+exception when duplicate_object then null; end $$;
+
 -- =====================================================================
 -- TABLE: agents
 -- =====================================================================
@@ -52,6 +60,7 @@ create table if not exists public.players (
   telephone text,
   email text,
   statut public.player_statut not null default 'prospect',
+  recruitment_step public.recruitment_step not null default 'premiere_observation',
   agent_referent uuid references public.agents(id) on delete set null,
   photo_url text,
   notes text,
@@ -63,6 +72,7 @@ create table if not exists public.players (
 
 create index if not exists players_agent_referent_idx on public.players(agent_referent);
 create index if not exists players_statut_idx on public.players(statut);
+create index if not exists players_recruitment_step_idx on public.players(recruitment_step);
 create index if not exists players_fin_contrat_idx on public.players(fin_contrat);
 create index if not exists players_nom_idx on public.players(nom);
 create index if not exists players_search_idx on public.players using gin (
