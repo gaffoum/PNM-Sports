@@ -31,7 +31,7 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-line bg-bg-1/70 backdrop-blur sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
+        <div className="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan to-teal-mid grid place-items-center font-display font-bold text-bg-0 text-sm">
               P
@@ -63,7 +63,7 @@ export default function AppLayout() {
           </div>
         </div>
       </header>
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
+      <main className="flex-1 max-w-[1600px] w-full mx-auto px-6 py-8">
         <Outlet />
       </main>
       <footer className="border-t border-line py-4 text-center text-[11px] text-ink-muted">
