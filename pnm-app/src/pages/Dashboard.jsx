@@ -4,6 +4,7 @@ import { Users, UserPlus, AlertTriangle, Activity, ChevronRight, UserCheck, User
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../hooks/useAuth";
 import { formatDateFr } from "../lib/utils";
+import { describeActivity } from "../lib/activityLabels";
 
 function StatCard({ icon: Icon, label, value, tone = "cyan" }) {
   const toneCls = {
@@ -122,8 +123,9 @@ export default function Dashboard() {
           {activity.map((a) => (
             <li key={a.id} className="py-2.5 flex items-center justify-between text-sm">
               <span>
-                <span className="text-ink-dim">{a.agent?.prenom} {a.agent?.nom}</span>{" "}
-                <span className="text-cyan-bright">{a.action}</span>
+                <span className="text-ink-dim">{a.agent?.prenom} {a.agent?.nom}</span>
+                <span className="text-ink-muted"> : </span>
+                <span className="text-cyan-bright">{describeActivity(a.action, a.details)}</span>
                 {a.player && <> <span className="text-ink-dim">— {a.player.prenom} {a.player.nom}</span></>}
               </span>
               <time className="text-[11px] text-ink-muted">{formatDateFr(a.created_at)}</time>

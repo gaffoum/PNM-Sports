@@ -6,6 +6,7 @@ import { Save, X } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
 import { STEPS, STEP_KEYS, DEFAULT_STEP, statutForStep } from "../../lib/recruitment";
+import { CLUBS } from "../../lib/clubs";
 
 const schema = z.object({
   nom: z.string().min(1, "Requis"),
@@ -104,6 +105,9 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <datalist id="clubs-list">
+        {CLUBS.map((c) => <option key={c} value={c} />)}
+      </datalist>
       <section className="panel p-5 space-y-4">
         <h3 className="text-sm uppercase tracking-wider text-cyan-bright">Identité</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -146,8 +150,8 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
       <section className="panel p-5 space-y-4">
         <h3 className="text-sm uppercase tracking-wider text-cyan-bright">Carrière</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Field name="club_actuel" label="Club actuel" />
-          <Field name="club_precedent" label="Club précédent" />
+          <Field name="club_actuel" label="Club actuel" list="clubs-list" placeholder="Choisir ou saisir…" />
+          <Field name="club_precedent" label="Club précédent" list="clubs-list" placeholder="Choisir ou saisir…" />
           <Field name="fin_contrat" label="Fin de contrat" type="date" />
           <Field name="valeur_estimee_eur" label="Valeur estimée (€)" type="number" />
         </div>
