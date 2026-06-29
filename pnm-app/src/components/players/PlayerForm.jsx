@@ -40,7 +40,8 @@ function cleanForDB(values) {
 }
 
 export default function PlayerForm({ player, onCancel, onSaved }) {
-  const { agent, isAdmin } = useAuth();
+  const { agent, isAdmin, can } = useAuth();
+  const canAssign = isAdmin || can("edit_players");
   const [agents, setAgents] = useState([]);
   const [saving, setSaving] = useState(false);
 
@@ -57,9 +58,9 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
   });
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!canAssign) return;
     supabase.from("agents").select("id, nom, prenom").order("nom").then(({ data }) => setAgents(data ?? []));
-  }, [isAdmin]);
+  }, [canAssign]);
 
   useEffect(() => {
     if (player) reset({
@@ -118,7 +119,7 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
           <Field name="recruitment_step" label="Étape de recrutement *" as="select">
             {STEPS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
           </Field>
-          {isAdmin ? (
+          {canAssign ? (
             <Field name="agent_referent" label="Agent référent" as="select">
               <option value="">— aucun —</option>
               {agents.map((a) => <option key={a.id} value={a.id}>{a.prenom} {a.nom}</option>)}

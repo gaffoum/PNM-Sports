@@ -136,8 +136,13 @@ export default function PlayerDetail() {
         <PlayerForm
           player={player}
           onCancel={() => setEditing(false)}
-          onSaved={(p) => {
-            setPlayer({ ...p, agent: player.agent });
+          onSaved={async (p) => {
+            try {
+              const fresh = await getPlayerById(p.id);
+              setPlayer(fresh);
+            } catch {
+              setPlayer({ ...p, agent: player.agent });
+            }
             logActivity(agent.id, p.id, "update_player");
             setEditing(false);
             toast.success("Fiche mise à jour");
