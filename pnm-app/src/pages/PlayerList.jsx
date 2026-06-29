@@ -1,23 +1,98 @@
-import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useReactTable, getCoreRowModel, flexRender } from "@tanstack/react-table";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
-import { ChevronLeft, ChevronRight, Download, Plus, ArrowUpDown, FileSpreadsheet } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Plus, ArrowUpDown, FileSpreadsheet, UserCheck } from "lucide-react";
 import { usePlayers } from "../hooks/usePlayers";
+import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "../hooks/useAuth";
 import PlayerSearch from "../components/players/PlayerSearch";
 import { calcAge, formatDateFr, formatMoney } from "../lib/utils";
+import { STEPS, stepLabel, stepShort, stepBadgeClass } from "../lib/recruitment";
 
 const PAGE_SIZE = 20;
 
+const TONE_UI = {
+  all:     { dot: "bg-ink-dim",     num: "text-ink",         active: "border-ink-dim ring-ink-dim/30" },
+  sky:     { dot: "bg-sky-400",     num: "text-sky-300",     active: "border-sky-400 ring-sky-400/40" },
+  indigo:  { dot: "bg-indigo-400",  num: "text-indigo-300",  active: "border-indigo-400 ring-indigo-400/40" },
+  teal:    { dot: "bg-teal-400",    num: "text-teal-300",    active: "border-teal-400 ring-teal-400/40" },
+  amber:   { dot: "bg-amber-400",   num: "text-amber-300",   active: "border-amber-400 ring-amber-400/40" },
+  orange:  { dot: "bg-orange-400",  num: "text-orange-300",  active: "border-orange-400 ring-orange-400/40" },
+  fuchsia: { dot: "bg-fuchsia-400", num: "text-fuchsia-300", active: "border-fuchsia-400 ring-fuchsia-400/40" },
+  lime:    { dot: "bg-lime-400",    num: "text-lime-300",    active: "border-lime-400 ring-lime-400/40" },
+  violet:  { dot: "bg-violet-400",  num: "text-violet-300",  active: "border-violet-400 ring-violet-400/40" },
+  emerald: { dot: "bg-emerald-400", num: "text-emerald-300", active: "border-emerald-400 ring-emerald-400/40" },
+  red:     { dot: "bg-red-400",     num: "text-red-300",     active: "border-red-400 ring-red-400/40" },
+};
+
+function StepCard({ tone, label, value, active, onClick }) {
+  const c = TONE_UI[tone] ?? TONE_UI.all;
+  return (
+    <button
+      onClick={onClick}
+      title={label}
+      className={`panel px-3 py-2.5 text-left transition border ${active ? `${c.active} ring-1` : "border-line hover:border-line-strong"}`}
+    >
+      <div className="flex items-center gap-1.5">
+        <span className={`w-2 h-2 rounded-full shrink-0 ${c.dot}`} />
+        <span className="text-[10px] uppercase tracking-wider text-ink-muted truncate">{label}</span>
+      </div>
+      <div className={`font-display font-bold text-xl mt-0.5 ${c.num}`}>{value}</div>
+    </button>
+  );
+}
+
 export default function PlayerList() {
   const nav = useNavigate();
+  const { agent } = useAuth();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({});
   const [sort, setSort] = useState({ column: "created_at", asc: false });
 
   const { rows, count, loading } = usePlayers({ page, pageSize: PAGE_SIZE, search, filters, sort });
+
+  // Filtres initiaux depuis l'URL (ex: clic depuis le tableau de bord)
+  const [searchParams] = useSearchParams();
+  const seeded = useRef(false);
+  useEffect(() => {
+    if (seeded.current) return;
+    seeded.current = true;
+    const seed = {};
+    for (const k of ["statut", "recruitment_step", "poste", "nationalite", "club", "fin_contrat_avant", "fin_contrat_apres", "agent_referent"]) {
+      const v = searchParams.get(k);
+      if (v) seed[k] = v;
+    }
+    if (Object.keys(seed).length) setFilters(seed);
+  }, [searchParams]);
+
+  // Compteur par étape de recrutement
+  const [stepCounts, setStepCounts] = useState({});
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data } = await supabase.from("players").select("recruitment_step");
+      if (!active) return;
+      const tally = {};
+      (data ?? []).forEach((r) => { tally[r.recruitment_step] = (tally[r.recruitment_step] ?? 0) + 1; });
+      setStepCounts(tally);
+    })();
+    return () => { active = false; };
+  }, []);
+  const totalCount = Object.values(stepCounts).reduce((a, b) => a + b, 0);
+
+  function setStep(v) {
+    setPage(0);
+    setFilters((f) => ({ ...f, recruitment_step: v || undefined }));
+  }
+
+  const mine = !!agent?.id && filters.agent_referent === agent.id;
+  function toggleMine() {
+    setPage(0);
+    setFilters((f) => ({ ...f, agent_referent: mine ? undefined : agent?.id }));
+  }
 
   function toggleSort(column) {
     setSort((s) => s.column === column ? { column, asc: !s.asc } : { column, asc: true });
@@ -52,6 +127,15 @@ export default function PlayerList() {
       ),
     },
     {
+      accessorKey: "recruitment_step",
+      header: "Étape",
+      cell: ({ row }) => (
+        <span className={`badge ${stepBadgeClass(row.original.recruitment_step)}`}>
+          {stepLabel(row.original.recruitment_step)}
+        </span>
+      ),
+    },
+    {
       id: "agent",
       header: "Agent",
       cell: ({ row }) => row.original.agent ? `${row.original.agent.prenom} ${row.original.agent.nom}` : "—",
@@ -78,6 +162,7 @@ export default function PlayerList() {
       Telephone: r.telephone,
       Email: r.email,
       Statut: r.statut,
+      Etape: stepLabel(r.recruitment_step),
       Agent: r.agent ? `${r.agent.prenom} ${r.agent.nom}` : "",
     }));
   }
@@ -108,11 +193,24 @@ export default function PlayerList() {
           <p className="text-ink-dim text-sm">{count} fiche{count !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex items-center gap-2">
+          <button className={`btn ${mine ? "btn-primary" : "btn-outline"}`} onClick={toggleMine}>
+            <UserCheck className="w-4 h-4" />Mes joueurs
+          </button>
           <button className="btn btn-outline" onClick={exportCsv}><Download className="w-4 h-4" />CSV</button>
           <button className="btn btn-outline" onClick={exportXlsx}><FileSpreadsheet className="w-4 h-4" />Excel</button>
           <Link to="/players/new" className="btn btn-primary"><Plus className="w-4 h-4" />Ajouter</Link>
         </div>
       </header>
+
+      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2.5">
+        <StepCard tone="all" label="Tous" value={totalCount}
+          active={!filters.recruitment_step} onClick={() => setStep(undefined)} />
+        {STEPS.map((st) => (
+          <StepCard key={st.key} tone={st.tone} label={stepShort(st.key)} value={stepCounts[st.key] ?? 0}
+            active={filters.recruitment_step === st.key}
+            onClick={() => setStep(filters.recruitment_step === st.key ? undefined : st.key)} />
+        ))}
+      </section>
 
       <PlayerSearch search={search} setSearch={setSearch} filters={filters} setFilters={setFilters} />
 

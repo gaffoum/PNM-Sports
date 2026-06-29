@@ -1,127 +1,205 @@
-import { Document, Page, Text, View, StyleSheet, Image, Font } from "@react-pdf/renderer";
+import {
+  Document, Page, Text, View, StyleSheet, Image,
+  Svg, Polygon, Line, Circle, Path, G, Text as SvgText,
+} from "@react-pdf/renderer";
 import { calcAge, formatDateFr, formatMoney } from "../../lib/utils";
 
+// ===== Charte "Élite Dark" =====
+const C = {
+  bg: "#04101f",
+  panel: "#0a2540",
+  panelLine: "#163a57",
+  cyan: "#7ce3ff",
+  white: "#ffffff",
+  muted: "#8cb4cd",
+  dim: "#557d99",
+  grid: "#285a78",
+  silBg: "#0d263c",
+  sil: "#1a3a56",
+};
+
+const LOGO_URL = (import.meta.env.BASE_URL || "/") + "logo-pnm.png";
+
 const s = StyleSheet.create({
-  page: { padding: 36, fontSize: 10, fontFamily: "Helvetica", color: "#0a2540", backgroundColor: "#ffffff" },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderBottom: "2px solid #1ab8e0", paddingBottom: 8, marginBottom: 16 },
-  brand: { fontSize: 18, fontWeight: 700, letterSpacing: 2, color: "#0f3b52" },
-  sub: { fontSize: 7, letterSpacing: 3, color: "#1ab8e0" },
-  hero: { flexDirection: "row", gap: 16, alignItems: "center", marginBottom: 20 },
-  photo: { width: 80, height: 80, borderRadius: 40, border: "1px solid #ccc" },
-  name: { fontSize: 22, fontWeight: 700 },
-  meta: { fontSize: 9, color: "#557388", marginTop: 2 },
-  badge: { fontSize: 8, padding: "2 6", borderRadius: 8, marginTop: 4, alignSelf: "flex-start" },
-  badgeJoueur: { backgroundColor: "#1ab8e022", color: "#0e8cb0" },
-  badgeProspect: { backgroundColor: "#f59e0b22", color: "#b45309" },
-  section: { marginBottom: 14 },
-  sectionTitle: { fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: "#1ab8e0", marginBottom: 6, textTransform: "uppercase" },
-  grid: { flexDirection: "row", flexWrap: "wrap" },
-  cell: { width: "50%", marginBottom: 4 },
-  cellLabel: { fontSize: 7, color: "#557388", textTransform: "uppercase", letterSpacing: 1 },
-  cellValue: { fontSize: 10 },
-  statsTable: { borderTop: "1px solid #e5e7eb" },
-  statsRow: { flexDirection: "row", borderBottom: "1px solid #e5e7eb", padding: "4 0" },
-  statsCol: { flex: 1, fontSize: 9 },
-  statsHead: { fontSize: 8, color: "#557388", textTransform: "uppercase" },
-  notes: { fontSize: 9, lineHeight: 1.4, color: "#0a2540" },
-  footer: { position: "absolute", bottom: 20, left: 36, right: 36, textAlign: "center", fontSize: 7, color: "#8aa9bd", borderTop: "1px solid #e5e7eb", paddingTop: 4 },
+  page: { backgroundColor: C.bg, color: C.white, fontFamily: "Helvetica", fontSize: 10, paddingBottom: 44 },
+  header: { backgroundColor: C.panel, paddingVertical: 16, paddingHorizontal: 28, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: 14 },
+  name: { fontSize: 20, fontWeight: 700, color: C.white },
+  sub: { fontSize: 9, color: C.cyan, marginTop: 3, letterSpacing: 0.5 },
+  logo: { width: 46, height: 46, objectFit: "contain" },
+
+  content: { paddingHorizontal: 28, paddingTop: 16 },
+
+  card: { backgroundColor: C.panel, borderRadius: 8, padding: 12, marginBottom: 12 },
+  cardTitle: { fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: C.cyan, textAlign: "center", marginBottom: 8 },
+  fieldsRow: { flexDirection: "row" },
+  field: { flex: 1, alignItems: "center", paddingHorizontal: 2 },
+  fLabel: { fontSize: 6.5, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 },
+  fValue: { fontSize: 11, fontWeight: 700, color: C.white, textAlign: "center" },
+
+  statsHead: { flexDirection: "row", alignItems: "center", marginTop: 4, marginBottom: 4 },
+  statsTitle: { fontSize: 12, fontWeight: 700, color: C.cyan, letterSpacing: 1 },
+  rule: { flex: 1, height: 1, backgroundColor: C.panelLine, marginLeft: 10 },
+  pending: { fontSize: 7.5, color: C.dim, marginLeft: 10 },
+
+  radarWrap: { alignItems: "center", marginTop: 4, marginBottom: 6 },
+  radarNote: { fontSize: 8, color: C.dim, marginTop: 2 },
+
+  table: { marginTop: 6 },
+  tHead: { flexDirection: "row", backgroundColor: "#0a3a55", paddingVertical: 5, paddingHorizontal: 6, borderRadius: 3 },
+  tRow: { flexDirection: "row", paddingVertical: 5, paddingHorizontal: 6, borderBottom: `1px solid ${C.panelLine}` },
+  tCol: { flex: 1, fontSize: 9, color: "#d7e7f2" },
+  tColH: { flex: 1, fontSize: 8, color: C.white, fontWeight: 700, textTransform: "uppercase" },
+
+  notes: { fontSize: 9, lineHeight: 1.4, color: "#cfe2f0", backgroundColor: C.panel, borderRadius: 8, padding: 12, marginTop: 4 },
+  footer: { position: "absolute", bottom: 18, left: 28, right: 28, textAlign: "center", fontSize: 7, color: C.dim, borderTop: `1px solid ${C.panelLine}`, paddingTop: 4 },
 });
 
-function Cell({ label, value }) {
+function Field({ label, value }) {
   return (
-    <View style={s.cell}>
-      <Text style={s.cellLabel}>{label}</Text>
-      <Text style={s.cellValue}>{value ?? "—"}</Text>
+    <View style={s.field}>
+      <Text style={s.fLabel}>{label}</Text>
+      <Text style={s.fValue}>{value ?? "—"}</Text>
+    </View>
+  );
+}
+
+function Silhouette() {
+  return (
+    <Svg width={64} height={64}>
+      <Circle cx={32} cy={32} r={31} fill={C.silBg} stroke={C.grid} strokeWidth={2} />
+      <Circle cx={32} cy={26} r={9} fill={C.sil} />
+      <Path d="M15 53 a17 16 0 0 1 34 0 z" fill={C.sil} />
+    </Svg>
+  );
+}
+
+const AXES = ["VITESSE", "TECHNIQUE", "PHYSIQUE", "MENTAL", "TACTIQUE", "PASSES"];
+function poly(cx, cy, r) {
+  return AXES.map((_, i) => {
+    const a = -Math.PI / 2 + (i * Math.PI) / 3;
+    return `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`;
+  }).join(" ");
+}
+
+function RadarPlaceholder() {
+  const W = 250, H = 210, cx = 125, cy = 100, R = 78;
+  return (
+    <View style={s.radarWrap}>
+      <Svg width={W} height={H}>
+        {[1, 0.75, 0.5, 0.25].map((f) => (
+          <Polygon key={f} points={poly(cx, cy, R * f)} stroke={C.grid} strokeWidth={1} fill="none" />
+        ))}
+        {AXES.map((ax, i) => {
+          const a = -Math.PI / 2 + (i * Math.PI) / 3;
+          const x = cx + R * Math.cos(a), y = cy + R * Math.sin(a);
+          const lx = cx + (R + 16) * Math.cos(a), ly = cy + (R + 16) * Math.sin(a);
+          return (
+            <G key={ax}>
+              <Line x1={cx} y1={cy} x2={x} y2={y} stroke={C.grid} strokeWidth={1} />
+              <SvgText x={lx} y={ly + 3} fill={C.muted} fontSize={7.5} textAnchor="middle">{ax}</SvgText>
+            </G>
+          );
+        })}
+        <SvgText x={cx} y={cy} fill={C.dim} fontSize={8} textAnchor="middle">Évaluation à venir</SvgText>
+      </Svg>
+      <Text style={s.radarNote}>Notation en attente — API BeSoccer Pro</Text>
     </View>
   );
 }
 
 export default function PlayerPdf({ player, stats = [] }) {
   const age = calcAge(player.date_naissance);
+  const careerLine = [player.club_actuel, player.poste].filter(Boolean).join("  ·  ") || "—";
   return (
     <Document>
       <Page size="A4" style={s.page}>
+        {/* En-tête : silhouette + nom + logo */}
         <View style={s.header}>
-          <View>
-            <Text style={s.brand}>PNM SPORTS</Text>
-            <Text style={s.sub}>FICHE JOUEUR</Text>
+          <View style={s.headerLeft}>
+            <Silhouette />
+            <View>
+              <Text style={s.name}>{player.prenom} {player.nom}</Text>
+              <Text style={s.sub}>{careerLine}</Text>
+            </View>
           </View>
-          <Text style={s.meta}>Édité le {formatDateFr(new Date())}</Text>
-        </View>
-        <View style={s.hero}>
-          {player.photo_url ? <Image src={player.photo_url} style={s.photo} /> : <View style={s.photo} />}
-          <View>
-            <Text style={s.name}>{player.prenom} {player.nom}</Text>
-            <Text style={s.meta}>{player.poste ?? "—"} · {player.nationalite ?? "—"} · {age ?? "—"} ans</Text>
-            <Text style={[s.badge, player.statut === "joueur" ? s.badgeJoueur : s.badgeProspect]}>
-              {player.statut === "joueur" ? "Joueur signé" : "Prospect"}
-            </Text>
-          </View>
+          <Image src={LOGO_URL} style={s.logo} />
         </View>
 
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>Identité &amp; profil</Text>
-          <View style={s.grid}>
-            <Cell label="Date de naissance" value={formatDateFr(player.date_naissance)} />
-            <Cell label="Nationalité" value={player.nationalite} />
-            <Cell label="Poste" value={player.poste} />
-            <Cell label="Pied fort" value={player.pied_fort} />
-            <Cell label="Taille" value={player.taille_cm ? `${player.taille_cm} cm` : null} />
-            <Cell label="Poids" value={player.poids_kg ? `${player.poids_kg} kg` : null} />
+        <View style={s.content}>
+          {/* Identité */}
+          <View style={s.card}>
+            <Text style={s.cardTitle}>IDENTITÉ</Text>
+            <View style={s.fieldsRow}>
+              <Field label="Naissance" value={formatDateFr(player.date_naissance)} />
+              <Field label="Âge" value={age ? `${age} ans` : null} />
+              <Field label="Nationalité" value={player.nationalite} />
+              <Field label="Pied" value={player.pied_fort} />
+              <Field label="Taille" value={player.taille_cm ? `${player.taille_cm} cm` : null} />
+              <Field label="Poids" value={player.poids_kg ? `${player.poids_kg} kg` : null} />
+            </View>
           </View>
-        </View>
 
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>Carrière</Text>
-          <View style={s.grid}>
-            <Cell label="Club actuel" value={player.club_actuel} />
-            <Cell label="Club précédent" value={player.club_precedent} />
-            <Cell label="Fin de contrat" value={formatDateFr(player.fin_contrat)} />
-            <Cell label="Valeur estimée" value={formatMoney(player.valeur_estimee_eur)} />
+          {/* Carrière */}
+          <View style={s.card}>
+            <Text style={s.cardTitle}>CARRIÈRE</Text>
+            <View style={s.fieldsRow}>
+              <Field label="Club actuel" value={player.club_actuel} />
+              <Field label="Club précédent" value={player.club_precedent} />
+              <Field label="Fin de contrat" value={formatDateFr(player.fin_contrat)} />
+              <Field label="Valeur estimée" value={formatMoney(player.valeur_estimee_eur)} />
+            </View>
           </View>
-        </View>
 
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>Coordonnées</Text>
-          <View style={s.grid}>
-            <Cell label="Téléphone" value={player.telephone} />
-            <Cell label="Email" value={player.email} />
-            <Cell label="Agent référent" value={player.agent ? `${player.agent.prenom} ${player.agent.nom}` : null} />
+          {/* Coordonnées */}
+          <View style={s.card}>
+            <Text style={s.cardTitle}>COORDONNÉES</Text>
+            <View style={s.fieldsRow}>
+              <Field label="Téléphone" value={player.telephone} />
+              <Field label="Email" value={player.email} />
+              <Field label="Agent référent" value={player.agent ? `${player.agent.prenom} ${player.agent.nom}` : null} />
+            </View>
           </View>
-        </View>
 
-        {stats.length > 0 && (
-          <View style={s.section}>
-            <Text style={s.sectionTitle}>Statistiques</Text>
-            <View style={s.statsTable}>
-              <View style={s.statsRow}>
-                <Text style={[s.statsCol, s.statsHead]}>Saison</Text>
-                <Text style={[s.statsCol, s.statsHead]}>Matchs</Text>
-                <Text style={[s.statsCol, s.statsHead]}>Buts</Text>
-                <Text style={[s.statsCol, s.statsHead]}>Passes</Text>
-                <Text style={[s.statsCol, s.statsHead]}>Minutes</Text>
+          {/* Stats : radar (placeholder) + tableau saisons */}
+          <View style={s.statsHead}>
+            <Text style={s.statsTitle}>STATS</Text>
+            <View style={s.rule} />
+          </View>
+
+          <RadarPlaceholder />
+
+          {stats.length > 0 ? (
+            <View style={s.table}>
+              <View style={s.tHead}>
+                <Text style={s.tColH}>Saison</Text>
+                <Text style={s.tColH}>Matchs</Text>
+                <Text style={s.tColH}>Buts</Text>
+                <Text style={s.tColH}>Passes</Text>
+                <Text style={s.tColH}>Minutes</Text>
               </View>
               {stats.map((st) => (
-                <View key={st.id} style={s.statsRow}>
-                  <Text style={s.statsCol}>{st.saison}</Text>
-                  <Text style={s.statsCol}>{st.matchs}</Text>
-                  <Text style={s.statsCol}>{st.buts}</Text>
-                  <Text style={s.statsCol}>{st.passes}</Text>
-                  <Text style={s.statsCol}>{st.minutes_jouees}</Text>
+                <View key={st.id} style={s.tRow}>
+                  <Text style={s.tCol}>{st.saison}</Text>
+                  <Text style={s.tCol}>{st.matchs}</Text>
+                  <Text style={s.tCol}>{st.buts}</Text>
+                  <Text style={s.tCol}>{st.passes}</Text>
+                  <Text style={s.tCol}>{st.minutes_jouees}</Text>
                 </View>
               ))}
             </View>
-          </View>
-        )}
+          ) : (
+            <Text style={s.radarNote}>Aucune statistique saisie.</Text>
+          )}
 
-        {player.notes && (
-          <View style={s.section}>
-            <Text style={s.sectionTitle}>Notes</Text>
+          {player.notes && (
             <Text style={s.notes}>{player.notes}</Text>
-          </View>
-        )}
+          )}
+        </View>
 
-        <Text style={s.footer}>PNM Sports — Document confidentiel — Usage interne uniquement</Text>
+        <Text style={s.footer}>
+          PNM Sports — Document confidentiel — Usage interne uniquement · Édité le {formatDateFr(new Date())}
+        </Text>
       </Page>
     </Document>
   );

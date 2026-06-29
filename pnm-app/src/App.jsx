@@ -9,13 +9,15 @@ import Dashboard from "./pages/Dashboard";
 import PlayerList from "./pages/PlayerList";
 import PlayerDetail from "./pages/PlayerDetail";
 import PlayerCreate from "./pages/PlayerCreate";
+import Recruitment from "./pages/Recruitment";
+import Agents from "./pages/Agents";
 import Profile from "./pages/Profile";
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Toaster theme="dark" position="top-right" richColors />
+        <Toaster theme="dark" position="bottom-right" richColors />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
@@ -30,6 +32,8 @@ export default function App() {
             <Route path="/players" element={<PlayerList />} />
             <Route path="/players/new" element={<PlayerCreate />} />
             <Route path="/players/:id" element={<PlayerDetail />} />
+            <Route path="/recrutement" element={<Recruitment />} />
+            <Route path="/agents" element={<ProtectedRoute requireAdmin><Agents /></ProtectedRoute>} />
             <Route path="/profile" element={<Profile />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

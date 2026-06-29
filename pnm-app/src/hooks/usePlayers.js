@@ -25,11 +25,13 @@ export function usePlayers({ page = 0, pageSize = 20, search = "", filters = {},
       );
     }
     if (filters.statut) q = q.eq("statut", filters.statut);
+    if (filters.recruitment_step) q = q.eq("recruitment_step", filters.recruitment_step);
     if (filters.poste) q = q.eq("poste", filters.poste);
     if (filters.nationalite) q = q.ilike("nationalite", `%${filters.nationalite}%`);
     if (filters.club) q = q.ilike("club_actuel", `%${filters.club}%`);
     if (filters.agent_referent) q = q.eq("agent_referent", filters.agent_referent);
     if (filters.fin_contrat_avant) q = q.lte("fin_contrat", filters.fin_contrat_avant);
+    if (filters.fin_contrat_apres) q = q.gte("fin_contrat", filters.fin_contrat_apres);
     if (filters.age_max) {
       const minDate = new Date();
       minDate.setFullYear(minDate.getFullYear() - filters.age_max);

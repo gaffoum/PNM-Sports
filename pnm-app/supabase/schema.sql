@@ -18,6 +18,14 @@ do $$ begin
   create type public.player_statut as enum ('joueur', 'prospect');
 exception when duplicate_object then null; end $$;
 
+do $$ begin
+  create type public.recruitment_step as enum (
+    'premiere_observation', 'contre_observation', 'observation_decisive',
+    'veille', 'prise_contact', 'rdv1', 'reflexion', 'rdv2',
+    'accepte', 'ne_pas_suivre'
+  );
+exception when duplicate_object then null; end $$;
+
 -- =====================================================================
 -- TABLE: agents
 -- =====================================================================
@@ -27,6 +35,8 @@ create table if not exists public.agents (
   prenom text not null,
   email text not null unique,
   role public.agent_role not null default 'agent',
+  permissions jsonb not null default '{}'::jsonb,
+  actif boolean not null default true,
   created_at timestamptz not null default now()
 );
 
@@ -52,6 +62,7 @@ create table if not exists public.players (
   telephone text,
   email text,
   statut public.player_statut not null default 'prospect',
+  recruitment_step public.recruitment_step not null default 'premiere_observation',
   agent_referent uuid references public.agents(id) on delete set null,
   photo_url text,
   notes text,
@@ -63,6 +74,7 @@ create table if not exists public.players (
 
 create index if not exists players_agent_referent_idx on public.players(agent_referent);
 create index if not exists players_statut_idx on public.players(statut);
+create index if not exists players_recruitment_step_idx on public.players(recruitment_step);
 create index if not exists players_fin_contrat_idx on public.players(fin_contrat);
 create index if not exists players_nom_idx on public.players(nom);
 create index if not exists players_search_idx on public.players using gin (
@@ -154,6 +166,16 @@ as $$
   );
 $$;
 
+create or replace function public.has_perm(perm text) returns boolean
+language sql security definer stable
+as $$
+  select exists (
+    select 1 from public.agents
+    where id = auth.uid()
+      and (role = 'admin' or coalesce((permissions ->> perm)::boolean, false))
+  );
+$$;
+
 -- =====================================================================
 -- RLS
 -- =====================================================================
@@ -184,6 +206,7 @@ create policy "players_select_admin_or_referent" on public.players
   using (
     public.is_admin()
     or agent_referent = auth.uid()
+    or public.has_perm('view_all_players')
   );
 
 drop policy if exists "players_insert_authenticated" on public.players;
@@ -197,20 +220,20 @@ create policy "players_insert_authenticated" on public.players
 drop policy if exists "players_update_admin_or_referent" on public.players;
 create policy "players_update_admin_or_referent" on public.players
   for update to authenticated
-  using (public.is_admin() or agent_referent = auth.uid())
-  with check (public.is_admin() or agent_referent = auth.uid());
+  using (public.is_admin() or agent_referent = auth.uid() or public.has_perm('edit_players'))
+  with check (public.is_admin() or agent_referent = auth.uid() or public.has_perm('edit_players'));
 
 drop policy if exists "players_delete_admin_or_referent" on public.players;
 create policy "players_delete_admin_or_referent" on public.players
   for delete to authenticated
-  using (public.is_admin() or agent_referent = auth.uid());
+  using (public.is_admin() or agent_referent = auth.uid() or public.has_perm('delete_players'));
 
 -- player_stats : meme regle que players (via player_id)
 drop policy if exists "player_stats_select" on public.player_stats;
 create policy "player_stats_select" on public.player_stats
   for select to authenticated
   using (
-    exists (
+    public.has_perm('view_all_players') or exists (
       select 1 from public.players p
       where p.id = player_stats.player_id
       and (public.is_admin() or p.agent_referent = auth.uid())
@@ -240,7 +263,7 @@ drop policy if exists "player_documents_select" on public.player_documents;
 create policy "player_documents_select" on public.player_documents
   for select to authenticated
   using (
-    exists (
+    public.has_perm('view_all_players') or exists (
       select 1 from public.players p
       where p.id = player_documents.player_id
       and (public.is_admin() or p.agent_referent = auth.uid())

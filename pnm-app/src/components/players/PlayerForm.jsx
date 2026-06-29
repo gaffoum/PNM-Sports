@@ -5,6 +5,8 @@ import { z } from "zod";
 import { Save, X } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
+import { STEPS, STEP_KEYS, DEFAULT_STEP, statutForStep } from "../../lib/recruitment";
+import { CLUBS } from "../../lib/clubs";
 
 const schema = z.object({
   nom: z.string().min(1, "Requis"),
@@ -21,7 +23,7 @@ const schema = z.object({
   valeur_estimee_eur: z.coerce.number().int().nonnegative().optional().or(z.literal("")),
   telephone: z.string().optional().or(z.literal("")),
   email: z.string().email().optional().or(z.literal("")),
-  statut: z.enum(["joueur", "prospect"]),
+  recruitment_step: z.enum(STEP_KEYS),
   agent_referent: z.string().uuid().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
   consentement_rgpd: z.boolean().optional(),
@@ -38,14 +40,15 @@ function cleanForDB(values) {
 }
 
 export default function PlayerForm({ player, onCancel, onSaved }) {
-  const { agent, isAdmin } = useAuth();
+  const { agent, isAdmin, can } = useAuth();
+  const canAssign = isAdmin || can("edit_players");
   const [agents, setAgents] = useState([]);
   const [saving, setSaving] = useState(false);
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
-      statut: "prospect",
+      recruitment_step: DEFAULT_STEP,
       agent_referent: agent?.id ?? "",
       consentement_rgpd: false,
       ...player,
@@ -55,9 +58,9 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
   });
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!canAssign) return;
     supabase.from("agents").select("id, nom, prenom").order("nom").then(({ data }) => setAgents(data ?? []));
-  }, [isAdmin]);
+  }, [canAssign]);
 
   useEffect(() => {
     if (player) reset({
@@ -71,6 +74,8 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
     setSaving(true);
     try {
       const payload = cleanForDB(values);
+      // Le statut (badge) découle de l'étape : Accepté => Joueur, sinon Prospect.
+      payload.statut = statutForStep(values.recruitment_step);
       if (player?.id) {
         const { data, error } = await supabase.from("players").update(payload).eq("id", player.id).select().single();
         if (error) throw error;
@@ -101,6 +106,9 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <datalist id="clubs-list">
+        {CLUBS.map((c) => <option key={c} value={c} />)}
+      </datalist>
       <section className="panel p-5 space-y-4">
         <h3 className="text-sm uppercase tracking-wider text-cyan-bright">Identité</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -108,11 +116,10 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
           <Field name="nom" label="Nom *" />
           <Field name="date_naissance" label="Date de naissance" type="date" />
           <Field name="nationalite" label="Nationalité" />
-          <Field name="statut" label="Statut *" as="select">
-            <option value="prospect">Prospect</option>
-            <option value="joueur">Joueur signé</option>
+          <Field name="recruitment_step" label="Étape de recrutement *" as="select">
+            {STEPS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
           </Field>
-          {isAdmin ? (
+          {canAssign ? (
             <Field name="agent_referent" label="Agent référent" as="select">
               <option value="">— aucun —</option>
               {agents.map((a) => <option key={a.id} value={a.id}>{a.prenom} {a.nom}</option>)}
@@ -144,8 +151,8 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
       <section className="panel p-5 space-y-4">
         <h3 className="text-sm uppercase tracking-wider text-cyan-bright">Carrière</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Field name="club_actuel" label="Club actuel" />
-          <Field name="club_precedent" label="Club précédent" />
+          <Field name="club_actuel" label="Club actuel" list="clubs-list" placeholder="Choisir ou saisir…" />
+          <Field name="club_precedent" label="Club précédent" list="clubs-list" placeholder="Choisir ou saisir…" />
           <Field name="fin_contrat" label="Fin de contrat" type="date" />
           <Field name="valeur_estimee_eur" label="Valeur estimée (€)" type="number" />
         </div>

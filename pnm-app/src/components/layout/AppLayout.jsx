@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, UserPlus, LogOut, User } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
 function NavItem({ to, icon: Icon, children, end }) {
@@ -20,7 +20,7 @@ function NavItem({ to, icon: Icon, children, end }) {
 }
 
 export default function AppLayout() {
-  const { agent, signOut } = useAuth();
+  const { agent, isAdmin, signOut } = useAuth();
   const nav = useNavigate();
 
   async function handleSignOut() {
@@ -31,11 +31,9 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-line bg-bg-1/70 backdrop-blur sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
+        <div className="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan to-teal-mid grid place-items-center font-display font-bold text-bg-0 text-sm">
-              P
-            </div>
+            <img src={`${import.meta.env.BASE_URL}logo-pnm.png`} alt="PNM Sports" className="w-9 h-9 rounded-lg object-contain" />
             <div className="leading-tight">
               <div className="font-display font-bold text-sm tracking-[0.18em]">PNM SPORTS</div>
               <div className="text-[9px] tracking-[0.3em] text-cyan-bright">ESPACE AGENTS</div>
@@ -44,7 +42,9 @@ export default function AppLayout() {
           <nav className="flex items-center gap-1">
             <NavItem to="/dashboard" icon={LayoutDashboard} end>Tableau de bord</NavItem>
             <NavItem to="/players" icon={Users}>Joueurs</NavItem>
+            <NavItem to="/recrutement" icon={LayoutGrid}>Prospection</NavItem>
             <NavItem to="/players/new" icon={UserPlus}>Ajouter</NavItem>
+            {isAdmin && <NavItem to="/agents" icon={ShieldCheck}>Agents</NavItem>}
           </nav>
           <div className="flex items-center gap-2">
             <div className="text-right leading-tight hidden sm:block">
@@ -62,7 +62,7 @@ export default function AppLayout() {
           </div>
         </div>
       </header>
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
+      <main className="flex-1 max-w-[1600px] w-full mx-auto px-6 py-8">
         <Outlet />
       </main>
       <footer className="border-t border-line py-4 text-center text-[11px] text-ink-muted">
