@@ -54,7 +54,7 @@ export default function PlayerList() {
     if (seeded.current) return;
     seeded.current = true;
     const seed = {};
-    for (const k of ["statut", "recruitment_step", "poste", "nationalite", "club", "fin_contrat_avant"]) {
+    for (const k of ["statut", "recruitment_step", "poste", "nationalite", "club", "fin_contrat_avant", "fin_contrat_apres", "agent_referent"]) {
       const v = searchParams.get(k);
       if (v) seed[k] = v;
     }

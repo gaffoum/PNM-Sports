@@ -58,6 +58,7 @@ export default function Dashboard() {
     return () => { active = false; };
   }, []);
 
+  const todayStr = new Date().toISOString().slice(0, 10);
   const sixMoStr = (() => {
     const d = new Date();
     d.setMonth(d.getMonth() + 6);
@@ -76,7 +77,7 @@ export default function Dashboard() {
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard icon={UserCheck} label="Joueurs signés" value={loading ? "—" : counts.joueurs} tone="cyan" to="/players?statut=joueur" />
         <StatCard icon={UserSearch} label="Prospects suivis" value={loading ? "—" : counts.prospects} tone="violet" to="/players?statut=prospect" />
-        <StatCard icon={AlertTriangle} label="Contrats < 6 mois" value={loading ? "—" : counts.expirent} tone="amber" to={`/players?fin_contrat_avant=${sixMoStr}`} />
+        <StatCard icon={AlertTriangle} label="Contrats < 6 mois" value={loading ? "—" : counts.expirent} tone="amber" to={`/players?fin_contrat_apres=${todayStr}&fin_contrat_avant=${sixMoStr}`} />
       </section>
 
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">

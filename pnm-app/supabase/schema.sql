@@ -35,6 +35,8 @@ create table if not exists public.agents (
   prenom text not null,
   email text not null unique,
   role public.agent_role not null default 'agent',
+  permissions jsonb not null default '{}'::jsonb,
+  actif boolean not null default true,
   created_at timestamptz not null default now()
 );
 

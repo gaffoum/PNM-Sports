@@ -1,10 +1,16 @@
 import { Search, X, SlidersHorizontal } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabaseClient";
 
 const POSTES = ["", "Gardien", "Défenseur", "Milieu", "Attaquant", "Latéral", "Pivot", "Ailier"];
 
 export default function PlayerSearch({ search, setSearch, filters, setFilters }) {
   const [open, setOpen] = useState(false);
+  const [agents, setAgents] = useState([]);
+
+  useEffect(() => {
+    supabase.from("agents").select("id, nom, prenom").order("nom").then(({ data }) => setAgents(data ?? []));
+  }, []);
 
   function update(k, v) { setFilters({ ...filters, [k]: v || undefined }); }
   function reset() { setFilters({}); setSearch(""); }
@@ -60,6 +66,13 @@ export default function PlayerSearch({ search, setSearch, filters, setFilters })
           <div>
             <label className="label">Club actuel</label>
             <input className="input" placeholder="ex : OL" value={filters.club ?? ""} onChange={(e) => update("club", e.target.value)} />
+          </div>
+          <div>
+            <label className="label">Agent référent</label>
+            <select className="input" value={filters.agent_referent ?? ""} onChange={(e) => update("agent_referent", e.target.value)}>
+              <option value="">Tous</option>
+              {agents.map((a) => <option key={a.id} value={a.id}>{a.prenom} {a.nom}</option>)}
+            </select>
           </div>
           <div>
             <label className="label">Âge min</label>
