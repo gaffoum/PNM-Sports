@@ -9,7 +9,7 @@ import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../hooks/useAuth";
 import PlayerSearch from "../components/players/PlayerSearch";
 import { calcAge, formatDateFr, formatMoney } from "../lib/utils";
-import { STEPS, stepLabel, stepShort, stepBadgeClass } from "../lib/recruitment";
+import { STEPS, stepLabel, stepShort, stepBadgeClass, stepDotClass } from "../lib/recruitment";
 
 const PAGE_SIZE = 20;
 
@@ -131,6 +131,7 @@ export default function PlayerList() {
       header: "Étape",
       cell: ({ row }) => (
         <span className={`badge ${stepBadgeClass(row.original.recruitment_step)}`}>
+          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${stepDotClass(row.original.recruitment_step)}`} />
           {stepLabel(row.original.recruitment_step)}
         </span>
       ),

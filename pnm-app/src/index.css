@@ -53,17 +53,18 @@
   .badge-admin { @apply bg-violet-400/15 text-violet-200 border-violet-400/30; }
   .badge-agent { @apply bg-cyan/15 text-cyan-bright border-cyan/40; }
 
-  /* Tonalités des étapes de recrutement */
-  .tone-badge-sky     { @apply bg-sky-400/10 text-sky-300 border-sky-400/30; }
-  .tone-badge-indigo  { @apply bg-indigo-400/10 text-indigo-300 border-indigo-400/30; }
-  .tone-badge-teal    { @apply bg-teal-400/10 text-teal-300 border-teal-400/30; }
-  .tone-badge-amber   { @apply bg-amber-400/10 text-amber-300 border-amber-400/30; }
-  .tone-badge-orange  { @apply bg-orange-400/10 text-orange-300 border-orange-400/30; }
-  .tone-badge-fuchsia { @apply bg-fuchsia-400/10 text-fuchsia-300 border-fuchsia-400/30; }
-  .tone-badge-lime    { @apply bg-lime-400/10 text-lime-300 border-lime-400/30; }
-  .tone-badge-violet  { @apply bg-violet-400/10 text-violet-300 border-violet-400/30; }
-  .tone-badge-emerald { @apply bg-emerald-400/10 text-emerald-300 border-emerald-400/30; }
-  .tone-badge-red     { @apply bg-red-400/10 text-red-300 border-red-400/30; }
+  /* Tonalités des étapes de recrutement — couleurs saturées pour rester lisibles
+     même en pastille 10px (sinon les teintes -300 virent au blanc sur fond marine). */
+  .tone-badge-sky     { @apply bg-sky-400/15 text-sky-400 border-sky-400/50; }
+  .tone-badge-indigo  { @apply bg-indigo-400/15 text-indigo-400 border-indigo-400/50; }
+  .tone-badge-teal    { @apply bg-teal-400/15 text-teal-400 border-teal-400/50; }
+  .tone-badge-amber   { @apply bg-amber-400/15 text-amber-400 border-amber-400/50; }
+  .tone-badge-orange  { @apply bg-orange-400/15 text-orange-400 border-orange-400/50; }
+  .tone-badge-fuchsia { @apply bg-fuchsia-400/15 text-fuchsia-400 border-fuchsia-400/50; }
+  .tone-badge-lime    { @apply bg-lime-400/15 text-lime-400 border-lime-400/50; }
+  .tone-badge-violet  { @apply bg-violet-400/15 text-violet-400 border-violet-400/50; }
+  .tone-badge-emerald { @apply bg-emerald-400/15 text-emerald-400 border-emerald-400/50; }
+  .tone-badge-red     { @apply bg-red-400/15 text-red-400 border-red-400/50; }
   .tone-card-sky     { @apply border-l-4 border-l-sky-400/70; }
   .tone-card-indigo  { @apply border-l-4 border-l-indigo-400/70; }
   .tone-card-teal    { @apply border-l-4 border-l-teal-400/70; }
