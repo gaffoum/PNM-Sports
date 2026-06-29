@@ -1,15 +1,38 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useReactTable, getCoreRowModel, flexRender } from "@tanstack/react-table";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { ChevronLeft, ChevronRight, Download, Plus, ArrowUpDown, FileSpreadsheet } from "lucide-react";
 import { usePlayers } from "../hooks/usePlayers";
+import { supabase } from "../lib/supabaseClient";
 import PlayerSearch from "../components/players/PlayerSearch";
 import { calcAge, formatDateFr, formatMoney } from "../lib/utils";
 import { stepLabel, stepBadgeClass } from "../lib/recruitment";
 
 const PAGE_SIZE = 20;
+
+const TONES = {
+  all:      { dot: "bg-ink-dim",     num: "text-ink",         active: "border-ink-dim ring-ink-dim/30" },
+  joueur:   { dot: "bg-cyan-bright", num: "text-cyan-bright", active: "border-cyan-bright ring-cyan-bright/40" },
+  prospect: { dot: "bg-amber-300",   num: "text-amber-300",   active: "border-amber-400 ring-amber-400/40" },
+};
+
+function StatutCard({ tone, label, value, active, onClick }) {
+  const c = TONES[tone];
+  return (
+    <button
+      onClick={onClick}
+      className={`panel p-4 text-left transition border ${active ? `${c.active} ring-1` : "border-line hover:border-line-strong"}`}
+    >
+      <div className="flex items-center gap-2">
+        <span className={`w-2.5 h-2.5 rounded-full ${c.dot}`} />
+        <span className="text-[11px] uppercase tracking-wider text-ink-muted">{label}</span>
+      </div>
+      <div className={`font-display font-bold text-2xl mt-1 ${c.num}`}>{value}</div>
+    </button>
+  );
+}
 
 export default function PlayerList() {
   const nav = useNavigate();
@@ -19,6 +42,24 @@ export default function PlayerList() {
   const [sort, setSort] = useState({ column: "created_at", asc: false });
 
   const { rows, count, loading } = usePlayers({ page, pageSize: PAGE_SIZE, search, filters, sort });
+
+  const [counts, setCounts] = useState({ joueur: 0, prospect: 0 });
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const [{ count: j }, { count: p }] = await Promise.all([
+        supabase.from("players").select("id", { count: "exact", head: true }).eq("statut", "joueur"),
+        supabase.from("players").select("id", { count: "exact", head: true }).eq("statut", "prospect"),
+      ]);
+      if (active) setCounts({ joueur: j ?? 0, prospect: p ?? 0 });
+    })();
+    return () => { active = false; };
+  }, []);
+
+  function setStatut(v) {
+    setPage(0);
+    setFilters((f) => ({ ...f, statut: v || undefined }));
+  }
 
   function toggleSort(column) {
     setSort((s) => s.column === column ? { column, asc: !s.asc } : { column, asc: true });
@@ -124,6 +165,15 @@ export default function PlayerList() {
           <Link to="/players/new" className="btn btn-primary"><Plus className="w-4 h-4" />Ajouter</Link>
         </div>
       </header>
+
+      <section className="grid grid-cols-3 gap-3">
+        <StatutCard tone="all" label="Tous" value={counts.joueur + counts.prospect}
+          active={!filters.statut} onClick={() => setStatut(undefined)} />
+        <StatutCard tone="joueur" label="Joueurs signés" value={counts.joueur}
+          active={filters.statut === "joueur"} onClick={() => setStatut(filters.statut === "joueur" ? undefined : "joueur")} />
+        <StatutCard tone="prospect" label="Prospects" value={counts.prospect}
+          active={filters.statut === "prospect"} onClick={() => setStatut(filters.statut === "prospect" ? undefined : "prospect")} />
+      </section>
 
       <PlayerSearch search={search} setSearch={setSearch} filters={filters} setFilters={setFilters} />
 
