@@ -7,7 +7,7 @@ import { PERMISSIONS } from "../lib/permissions";
 export default function Agents() {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ prenom: "", nom: "", email: "", role: "agent" });
+  const [form, setForm] = useState({ prenom: "", nom: "", email: "", role: "agent", password: "" });
   const [creating, setCreating] = useState(false);
 
   async function load() {
@@ -42,12 +42,13 @@ export default function Agents() {
   async function createAgent(e) {
     e.preventDefault();
     if (!form.email || !form.prenom || !form.nom) return;
+    if (form.password.length < 8) return toast.error("Mot de passe initial : 8 caractères minimum.");
     setCreating(true);
     try {
       const { error } = await supabase.functions.invoke("admin-create-agent", { body: form });
       if (error) throw error;
-      toast.success("Agent créé — un e-mail d'invitation a été envoyé.");
-      setForm({ prenom: "", nom: "", email: "", role: "agent" });
+      toast.success("Agent créé. Communiquez-lui son mot de passe initial.");
+      setForm({ prenom: "", nom: "", email: "", role: "agent", password: "" });
       load();
     } catch {
       toast.error("Création indisponible : la fonction serveur « admin-create-agent » n'est pas encore déployée (voir supabase/functions).");
@@ -68,10 +69,11 @@ export default function Agents() {
         <h3 className="text-sm uppercase tracking-wider text-cyan-bright flex items-center gap-2">
           <UserPlus className="w-4 h-4" /> Ajouter un agent
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <input className="input" placeholder="Prénom" value={form.prenom} onChange={(e) => setForm({ ...form, prenom: e.target.value })} />
           <input className="input" placeholder="Nom" value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} />
           <input className="input" type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          <input className="input" placeholder="Mot de passe initial (8 car. min.)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
           <select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
             <option value="agent">Agent</option>
             <option value="admin">Administrateur</option>
@@ -83,8 +85,8 @@ export default function Agents() {
           </button>
         </div>
         <p className="text-[11px] text-ink-muted">
-          La création envoie une invitation par e-mail (mot de passe défini par l'agent). Nécessite la fonction
-          serveur <code>admin-create-agent</code> déployée sur Supabase.
+          Aucun e-mail n'est envoyé : tu définis un <b>mot de passe initial</b> et tu le communiques à l'agent.
+          À sa <b>première connexion</b>, il devra le changer. Nécessite la fonction serveur <code>admin-create-agent</code> déployée.
         </p>
       </form>
 

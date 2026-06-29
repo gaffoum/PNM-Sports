@@ -67,6 +67,7 @@ export function AuthProvider({ children }) {
     agent,
     isAdmin: agent?.role === "admin",
     can: (key) => hasPermission(agent, key),
+    mustChangePassword: !!session?.user?.user_metadata?.must_change_password,
     isAuthenticated: !!session,
     loading,
     signIn,

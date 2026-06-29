@@ -1,8 +1,9 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import ForcePasswordChange from "./ForcePasswordChange";
 
 export default function ProtectedRoute({ children, requireAdmin = false }) {
-  const { isAuthenticated, agent, loading } = useAuth();
+  const { isAuthenticated, agent, loading, mustChangePassword } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -26,6 +27,9 @@ export default function ProtectedRoute({ children, requireAdmin = false }) {
         </div>
       </div>
     );
+  }
+  if (mustChangePassword) {
+    return <ForcePasswordChange />;
   }
   if (requireAdmin && agent.role !== "admin") {
     return <Navigate to="/dashboard" replace />;
