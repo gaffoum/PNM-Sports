@@ -71,7 +71,7 @@ function Card({ p, onMove }) {
 
 function Column({ step, players, onMove }) {
   return (
-    <div className="w-64 shrink-0 flex flex-col">
+    <div className="min-w-0 flex flex-col">
       <div className="flex items-center justify-between px-1 pb-2 mb-2 border-b border-line">
         <span className="text-xs font-semibold uppercase tracking-wider text-ink-dim">{step.label}</span>
         <span className="text-[10px] text-ink-muted bg-bg-1 border border-line rounded-full px-2 py-0.5">{players.length}</span>
@@ -136,14 +136,14 @@ export default function Recruitment() {
         <div className="text-ink-dim">Chargement…</div>
       ) : (
         <>
-          <div className="flex gap-4 overflow-x-auto pb-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3 pb-2">
             {KANBAN_STEPS.map((step) => (
               <Column key={step.key} step={step} players={by(step.key)} onMove={onMove} />
             ))}
           </div>
 
           {showArchived && (
-            <div className="flex gap-4 overflow-x-auto pb-4 border-t border-line pt-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pb-2 border-t border-line pt-4">
               {TERMINAL_STEPS.map((step) => (
                 <Column key={step.key} step={step} players={by(step.key)} onMove={onMove} />
               ))}
