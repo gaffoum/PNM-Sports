@@ -42,7 +42,7 @@ export default function AppLayout() {
           <nav className="flex items-center gap-1">
             <NavItem to="/dashboard" icon={LayoutDashboard} end>Tableau de bord</NavItem>
             <NavItem to="/players" icon={Users}>Joueurs</NavItem>
-            <NavItem to="/recrutement" icon={LayoutGrid}>Recrutement</NavItem>
+            <NavItem to="/recrutement" icon={LayoutGrid}>Prospection</NavItem>
             <NavItem to="/players/new" icon={UserPlus}>Ajouter</NavItem>
           </nav>
           <div className="flex items-center gap-2">

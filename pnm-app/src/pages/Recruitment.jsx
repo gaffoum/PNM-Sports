@@ -121,7 +121,7 @@ export default function Recruitment() {
     <div className="space-y-6">
       <header className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl">Recrutement</h1>
+          <h1 className="text-3xl">Prospection</h1>
           <p className="text-ink-dim text-sm">Tunnel de suivi des prospects · {players.length} fiche{players.length !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex items-center gap-2">

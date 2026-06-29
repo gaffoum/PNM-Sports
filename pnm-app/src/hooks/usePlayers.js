@@ -25,6 +25,7 @@ export function usePlayers({ page = 0, pageSize = 20, search = "", filters = {},
       );
     }
     if (filters.statut) q = q.eq("statut", filters.statut);
+    if (filters.recruitment_step) q = q.eq("recruitment_step", filters.recruitment_step);
     if (filters.poste) q = q.eq("poste", filters.poste);
     if (filters.nationalite) q = q.ilike("nationalite", `%${filters.nationalite}%`);
     if (filters.club) q = q.ilike("club_actuel", `%${filters.club}%`);
