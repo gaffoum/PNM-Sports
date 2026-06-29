@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Download, Plus, ArrowUpDown, FileSpreadsheet
 import { usePlayers } from "../hooks/usePlayers";
 import PlayerSearch from "../components/players/PlayerSearch";
 import { calcAge, formatDateFr, formatMoney } from "../lib/utils";
+import { stepLabel, stepBadgeClass } from "../lib/recruitment";
 
 const PAGE_SIZE = 20;
 
@@ -52,6 +53,15 @@ export default function PlayerList() {
       ),
     },
     {
+      accessorKey: "recruitment_step",
+      header: "Étape",
+      cell: ({ row }) => (
+        <span className={`badge ${stepBadgeClass(row.original.recruitment_step)}`}>
+          {stepLabel(row.original.recruitment_step)}
+        </span>
+      ),
+    },
+    {
       id: "agent",
       header: "Agent",
       cell: ({ row }) => row.original.agent ? `${row.original.agent.prenom} ${row.original.agent.nom}` : "—",
@@ -78,6 +88,7 @@ export default function PlayerList() {
       Telephone: r.telephone,
       Email: r.email,
       Statut: r.statut,
+      Etape: stepLabel(r.recruitment_step),
       Agent: r.agent ? `${r.agent.prenom} ${r.agent.nom}` : "",
     }));
   }

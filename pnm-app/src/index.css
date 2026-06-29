@@ -52,6 +52,18 @@
   .badge-prospect { @apply bg-amber-400/10 text-amber-300 border-amber-400/30; }
   .badge-admin { @apply bg-violet-400/15 text-violet-200 border-violet-400/30; }
   .badge-agent { @apply bg-cyan/15 text-cyan-bright border-cyan/40; }
+
+  /* Tonalités des étapes de recrutement */
+  .tone-badge-blue  { @apply bg-blue-400/10 text-blue-300 border-blue-400/30; }
+  .tone-badge-cyan  { @apply bg-cyan-bright/10 text-cyan-bright border-cyan-bright/30; }
+  .tone-badge-amber { @apply bg-amber-400/10 text-amber-300 border-amber-400/30; }
+  .tone-badge-green { @apply bg-emerald-400/10 text-emerald-300 border-emerald-400/30; }
+  .tone-badge-red   { @apply bg-red-400/10 text-red-300 border-red-400/30; }
+  .tone-card-blue  { @apply border-l-4 border-l-blue-400/70; }
+  .tone-card-cyan  { @apply border-l-4 border-l-cyan-bright/70; }
+  .tone-card-amber { @apply border-l-4 border-l-amber-400/70; }
+  .tone-card-green { @apply border-l-4 border-l-emerald-400/70; }
+  .tone-card-red   { @apply border-l-4 border-l-red-400/70; }
 }
 
 .reactEasyCrop_Container { background: #04101f; }

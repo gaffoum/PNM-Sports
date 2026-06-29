@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Save, X } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
+import { STEPS, STEP_KEYS, DEFAULT_STEP, statutForStep } from "../../lib/recruitment";
 
 const schema = z.object({
   nom: z.string().min(1, "Requis"),
@@ -21,7 +22,7 @@ const schema = z.object({
   valeur_estimee_eur: z.coerce.number().int().nonnegative().optional().or(z.literal("")),
   telephone: z.string().optional().or(z.literal("")),
   email: z.string().email().optional().or(z.literal("")),
-  statut: z.enum(["joueur", "prospect"]),
+  recruitment_step: z.enum(STEP_KEYS),
   agent_referent: z.string().uuid().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
   consentement_rgpd: z.boolean().optional(),
@@ -45,7 +46,7 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
   const { register, handleSubmit, formState: { errors }, reset } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
-      statut: "prospect",
+      recruitment_step: DEFAULT_STEP,
       agent_referent: agent?.id ?? "",
       consentement_rgpd: false,
       ...player,
@@ -71,6 +72,8 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
     setSaving(true);
     try {
       const payload = cleanForDB(values);
+      // Le statut (badge) découle de l'étape : Accepté => Joueur, sinon Prospect.
+      payload.statut = statutForStep(values.recruitment_step);
       if (player?.id) {
         const { data, error } = await supabase.from("players").update(payload).eq("id", player.id).select().single();
         if (error) throw error;
@@ -108,9 +111,8 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
           <Field name="nom" label="Nom *" />
           <Field name="date_naissance" label="Date de naissance" type="date" />
           <Field name="nationalite" label="Nationalité" />
-          <Field name="statut" label="Statut *" as="select">
-            <option value="prospect">Prospect</option>
-            <option value="joueur">Joueur signé</option>
+          <Field name="recruitment_step" label="Étape de recrutement *" as="select">
+            {STEPS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
           </Field>
           {isAdmin ? (
             <Field name="agent_referent" label="Agent référent" as="select">
