@@ -105,7 +105,7 @@ export default function PlayerDetail() {
       .single();
     if (error) { toast.error(error.message); return; }
     setPlayer({ ...player, ...data, agent: player.agent });
-    logActivity(agent.id, player.id, "update_step", { step: newStep });
+    logActivity(agent.id, player.id, "update_step", { from: player.recruitment_step, to: newStep });
     toast.success(`Étape : ${stepLabel(newStep)}`);
   }
 

@@ -33,6 +33,23 @@ export function stepLabel(step) {
   return STEP_MAP[step]?.label ?? step ?? "—";
 }
 
+// Libellés courts pour les en-têtes de colonnes Kanban (tiennent sur une ligne).
+export const STEP_SHORT = {
+  premiere_observation: "1ère obs.",
+  contre_observation: "Contre-obs.",
+  observation_decisive: "Obs. décisive",
+  veille: "Veille",
+  prise_contact: "Prise contact",
+  rdv1: "RDV 1",
+  reflexion: "Réflexion",
+  rdv2: "RDV 2",
+  accepte: "Accepté",
+  ne_pas_suivre: "Ne pas suivre",
+};
+export function stepShort(step) {
+  return STEP_SHORT[step] ?? stepLabel(step);
+}
+
 export function stepTone(step) {
   return STEP_MAP[step]?.tone ?? "blue";
 }
