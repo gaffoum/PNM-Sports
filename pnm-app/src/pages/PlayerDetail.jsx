@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "../lib/supabaseClient";
 import { getPlayerById, getPlayerStats, getPlayerDocuments } from "../hooks/usePlayers";
 import { useAuth } from "../hooks/useAuth";
+import { useConfirm } from "../contexts/ConfirmContext";
 import { calcAge, formatDateFr, formatMoney } from "../lib/utils";
 import { logActivity } from "../lib/logActivity";
 import { STEPS, statutForStep, stepLabel, stepBadgeClass } from "../lib/recruitment";
@@ -28,6 +29,7 @@ export default function PlayerDetail() {
   const { id } = useParams();
   const nav = useNavigate();
   const { agent } = useAuth();
+  const confirm = useConfirm();
   const fileRef = useRef(null);
 
   const [player, setPlayer] = useState(null);
@@ -78,7 +80,13 @@ export default function PlayerDetail() {
   }
 
   async function deletePlayer() {
-    if (!confirm(`Supprimer définitivement la fiche de ${player.prenom} ${player.nom} ? (droit à l'oubli RGPD)`)) return;
+    const ok = await confirm({
+      title: "Supprimer cette fiche ?",
+      message: `Fiche de ${player.prenom} ${player.nom}.\nSuppression définitive (droit à l'oubli RGPD).`,
+      confirmLabel: "Supprimer",
+      danger: true,
+    });
+    if (!ok) return;
     if (player.photo_url) {
       try {
         const path = decodeURIComponent(new URL(player.photo_url).pathname.split("/player-photos/")[1]);

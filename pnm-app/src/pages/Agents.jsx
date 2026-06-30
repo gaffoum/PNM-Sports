@@ -3,12 +3,14 @@ import { toast } from "sonner";
 import { UserPlus, Save, ShieldCheck, Search, Trash2 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../hooks/useAuth";
+import { useConfirm } from "../contexts/ConfirmContext";
 import { PERMISSIONS } from "../lib/permissions";
 
 const OWNER_EMAIL = "gaffoum@gmail.com";
 
 export default function Agents() {
   const { agent: me } = useAuth();
+  const confirm = useConfirm();
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ prenom: "", nom: "", email: "", role: "agent", password: "" });
@@ -50,7 +52,13 @@ export default function Agents() {
     if (isOwner && !iAmOwner) {
       return toast.error("Le compte propriétaire ne peut être supprimé que par lui-même.");
     }
-    if (!window.confirm(`Supprimer définitivement ${ag.prenom} ${ag.nom} (${ag.email}) ?\nCette action est irréversible.`)) return;
+    const ok = await confirm({
+      title: "Supprimer cet agent ?",
+      message: `${ag.prenom} ${ag.nom} (${ag.email})\nCette action est irréversible.`,
+      confirmLabel: "Supprimer",
+      danger: true,
+    });
+    if (!ok) return;
     const { data, error } = await supabase.functions.invoke("admin-delete-agent", { body: { id: ag.id } });
     if (error || data?.error) {
       return toast.error(data?.error || "Suppression impossible (fonction « admin-delete-agent » déployée ?).");

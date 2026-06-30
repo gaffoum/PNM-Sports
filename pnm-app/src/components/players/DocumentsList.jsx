@@ -1,13 +1,16 @@
 import { useRef, useState } from "react";
 import { Upload, FileText, Trash2, Download } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "../../lib/supabaseClient";
 import { formatDateFr } from "../../lib/utils";
 import { useAuth } from "../../hooks/useAuth";
+import { useConfirm } from "../../contexts/ConfirmContext";
 
 export default function DocumentsList({ playerId, documents, onChange }) {
   const inputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const { agent } = useAuth();
+  const confirm = useConfirm();
 
   async function upload(e) {
     const file = e.target.files?.[0];
@@ -28,7 +31,7 @@ export default function DocumentsList({ playerId, documents, onChange }) {
       if (error) throw error;
       onChange([row, ...documents]);
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -37,15 +40,21 @@ export default function DocumentsList({ playerId, documents, onChange }) {
 
   async function downloadDoc(d) {
     const { data, error } = await supabase.storage.from("player-documents").createSignedUrl(d.storage_path, 300);
-    if (error) { alert(error.message); return; }
+    if (error) { toast.error(error.message); return; }
     window.open(data.signedUrl, "_blank");
   }
 
   async function del(d) {
-    if (!confirm(`Supprimer "${d.nom}" ?`)) return;
+    const ok = await confirm({
+      title: "Supprimer ce document ?",
+      message: `« ${d.nom} »`,
+      confirmLabel: "Supprimer",
+      danger: true,
+    });
+    if (!ok) return;
     await supabase.storage.from("player-documents").remove([d.storage_path]);
     const { error } = await supabase.from("player_documents").delete().eq("id", d.id);
-    if (error) { alert(error.message); return; }
+    if (error) { toast.error(error.message); return; }
     onChange(documents.filter((x) => x.id !== d.id));
   }
 
