@@ -1,73 +1,129 @@
+import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck, Menu, X } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
-function NavItem({ to, icon: Icon, children, end }) {
+function NavItem({ to, icon: Icon, children, end, onClick }) {
   return (
     <NavLink
       to={to}
       end={end}
+      onClick={onClick}
       className={({ isActive }) =>
-        `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+        `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
           isActive ? "bg-cyan-bright/10 text-cyan-bright" : "text-ink-dim hover:text-ink hover:bg-line/30"
         }`
       }
     >
-      <Icon className="w-4 h-4" />
+      <Icon className="w-4 h-4 shrink-0" />
       <span>{children}</span>
     </NavLink>
+  );
+}
+
+function SidebarContent({ agent, isAdmin, onNavigate, onSignOut, goProfile }) {
+  return (
+    <div className="flex flex-col h-full">
+      {/* Marque */}
+      <div className="flex items-center gap-3 px-5 h-16 border-b border-line shrink-0">
+        <img src={`${import.meta.env.BASE_URL}logo-pnm.png`} alt="PNM Sports" className="w-9 h-9 rounded-lg object-contain" />
+        <div className="leading-tight">
+          <div className="font-display font-bold text-sm tracking-[0.18em]">PNM SPORTS</div>
+          <div className="text-[9px] tracking-[0.3em] text-cyan-bright">ESPACE AGENTS</div>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+        <NavItem to="/dashboard" icon={LayoutDashboard} end onClick={onNavigate}>Tableau de bord</NavItem>
+        <NavItem to="/players" icon={Users} onClick={onNavigate}>Joueurs</NavItem>
+        <NavItem to="/recrutement" icon={LayoutGrid} onClick={onNavigate}>Prospection</NavItem>
+        <NavItem to="/players/new" icon={UserPlus} onClick={onNavigate}>Ajouter</NavItem>
+        {isAdmin && <NavItem to="/agents" icon={ShieldCheck} onClick={onNavigate}>Agents</NavItem>}
+      </nav>
+
+      {/* Utilisateur + actions */}
+      <div className="border-t border-line p-3 shrink-0">
+        <button
+          onClick={() => { goProfile(); onNavigate?.(); }}
+          className="w-full flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-line/30 transition-colors text-left"
+          title="Mon profil"
+        >
+          <span className="w-9 h-9 rounded-full bg-bg-1 border border-line grid place-items-center text-cyan-bright shrink-0">
+            <User className="w-4 h-4" />
+          </span>
+          <span className="min-w-0 leading-tight">
+            <span className="block text-xs font-semibold truncate">{agent?.prenom} {agent?.nom}</span>
+            <span className={`badge mt-0.5 ${agent?.role === "admin" ? "badge-admin" : "badge-agent"}`}>{agent?.role}</span>
+          </span>
+        </button>
+        <button onClick={onSignOut} className="btn btn-ghost w-full justify-start mt-1 px-2">
+          <LogOut className="w-4 h-4" />Déconnexion
+        </button>
+      </div>
+    </div>
   );
 }
 
 export default function AppLayout() {
   const { agent, isAdmin, signOut } = useAuth();
   const nav = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   async function handleSignOut() {
+    setMobileOpen(false);
     await signOut();
     nav("/login", { replace: true });
   }
 
+  const sidebar = (
+    <SidebarContent
+      agent={agent}
+      isAdmin={isAdmin}
+      onNavigate={() => setMobileOpen(false)}
+      onSignOut={handleSignOut}
+      goProfile={() => nav("/profile")}
+    />
+  );
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="border-b border-line bg-bg-1/70 backdrop-blur sticky top-0 z-30">
-        <div className="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <img src={`${import.meta.env.BASE_URL}logo-pnm.png`} alt="PNM Sports" className="w-9 h-9 rounded-lg object-contain" />
-            <div className="leading-tight">
-              <div className="font-display font-bold text-sm tracking-[0.18em]">PNM SPORTS</div>
-              <div className="text-[9px] tracking-[0.3em] text-cyan-bright">ESPACE AGENTS</div>
-            </div>
-          </div>
-          <nav className="flex items-center gap-1">
-            <NavItem to="/dashboard" icon={LayoutDashboard} end>Tableau de bord</NavItem>
-            <NavItem to="/players" icon={Users}>Joueurs</NavItem>
-            <NavItem to="/recrutement" icon={LayoutGrid}>Prospection</NavItem>
-            <NavItem to="/players/new" icon={UserPlus}>Ajouter</NavItem>
-            {isAdmin && <NavItem to="/agents" icon={ShieldCheck}>Agents</NavItem>}
-          </nav>
-          <div className="flex items-center gap-2">
-            <div className="text-right leading-tight hidden sm:block">
-              <div className="text-xs font-semibold">{agent?.prenom} {agent?.nom}</div>
-              <div className="text-[10px] text-ink-muted uppercase tracking-wider">
-                <span className={`badge ${agent?.role === "admin" ? "badge-admin" : "badge-agent"}`}>{agent?.role}</span>
-              </div>
-            </div>
-            <button onClick={() => nav("/profile")} className="btn btn-ghost px-2" title="Mon profil">
-              <User className="w-4 h-4" />
-            </button>
-            <button onClick={handleSignOut} className="btn btn-ghost px-2" title="Déconnexion">
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+    <div className="min-h-screen md:flex">
+      {/* Barre latérale fixe (desktop) */}
+      <aside className="hidden md:flex md:flex-col w-60 shrink-0 border-r border-line bg-bg-1/70 backdrop-blur fixed inset-y-0 left-0 z-30">
+        {sidebar}
+      </aside>
+
+      {/* En-tête mobile */}
+      <header className="md:hidden sticky top-0 z-30 flex items-center gap-3 h-14 px-4 border-b border-line bg-bg-1/80 backdrop-blur">
+        <button onClick={() => setMobileOpen(true)} className="btn btn-ghost px-2" title="Menu">
+          <Menu className="w-5 h-5" />
+        </button>
+        <img src={`${import.meta.env.BASE_URL}logo-pnm.png`} alt="PNM Sports" className="w-7 h-7 rounded object-contain" />
+        <span className="font-display font-bold text-sm tracking-[0.18em]">PNM SPORTS</span>
       </header>
-      <main className="flex-1 max-w-[1600px] w-full mx-auto px-6 py-8">
-        <Outlet />
-      </main>
-      <footer className="border-t border-line py-4 text-center text-[11px] text-ink-muted">
-        © {new Date().getFullYear()} PNM Sports — Espace agents
-      </footer>
+
+      {/* Tiroir mobile */}
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 z-40">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
+          <aside className="absolute inset-y-0 left-0 w-64 bg-bg-1 border-r border-line shadow-xl">
+            <button onClick={() => setMobileOpen(false)} className="btn btn-ghost px-2 absolute top-3 right-2 z-10" title="Fermer">
+              <X className="w-5 h-5" />
+            </button>
+            {sidebar}
+          </aside>
+        </div>
+      )}
+
+      {/* Contenu */}
+      <div className="flex-1 min-w-0 md:ml-60 flex flex-col min-h-screen">
+        <main className="flex-1 w-full max-w-[1600px] mx-auto px-6 py-8">
+          <Outlet />
+        </main>
+        <footer className="border-t border-line py-4 text-center text-[11px] text-ink-muted">
+          © {new Date().getFullYear()} PNM Sports — Espace agents
+        </footer>
+      </div>
     </div>
   );
 }
