@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PNM Sports — Proposition d'évolutions</title>
+<style>
+  :root{
+    --bg0:#04101f; --bg1:#06192d; --bg2:#0a2540; --panel:#0c2c4a;
+    --cyan:#1ab8e0; --cyan-bright:#7ce3ff; --ink:#e7f4fa; --ink-dim:#8aa9bd;
+    --ink-muted:#557388; --line:rgba(124,227,255,.16); --line-strong:rgba(124,227,255,.30);
+    --green:#34d399; --amber:#fbbf24; --violet:#c4b5fd;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg0); color:var(--ink);
+    font-family:'Inter','Segoe UI',system-ui,sans-serif; line-height:1.6; font-size:14px;}
+  h1,h2,h3,h4{font-family:'Sora','Segoe UI',sans-serif; font-weight:700; letter-spacing:-.01em; margin:0;}
+  code{background:rgba(124,227,255,.08);padding:1px 5px;border-radius:5px;font-size:.9em;}
+  .wrap{max-width:1080px; margin:0 auto; padding:40px 28px 80px;}
+
+  .cover{background:linear-gradient(160deg,#0a2540,#06192d 60%,#04101f);
+    border:1px solid var(--line); border-radius:18px; padding:48px; margin-bottom:30px; position:relative; overflow:hidden;}
+  .cover:before{content:""; position:absolute; right:-90px; top:-90px; width:320px; height:320px;
+    background:radial-gradient(circle,rgba(26,184,224,.22),transparent 70%);}
+  .brand{display:flex; align-items:center; gap:14px; margin-bottom:30px;}
+  .logo{width:56px;height:56px;border-radius:13px;background:linear-gradient(135deg,#1ab8e0,#0e8cb0);
+    display:grid;place-items:center;font-family:'Sora';font-weight:800;color:#04101f;font-size:21px;letter-spacing:1px;}
+  .brand .sub{font-size:10px;letter-spacing:.32em;color:var(--cyan-bright);text-transform:uppercase;}
+  .brand .name{font-family:'Sora';font-weight:800;letter-spacing:.18em;font-size:16px;}
+  .cover h1{font-size:34px;line-height:1.12;margin-bottom:14px;}
+  .cover p.lead{color:var(--ink-dim);font-size:16px;max-width:720px;}
+  .meta{display:flex;gap:28px;flex-wrap:wrap;margin-top:26px;font-size:12px;color:var(--ink-muted);}
+  .meta b{color:var(--ink);font-weight:600;}
+
+  /* tarif préférentiel */
+  .rate{display:flex;align-items:center;gap:24px;flex-wrap:wrap;
+    background:linear-gradient(135deg,rgba(26,184,224,.12),rgba(52,211,153,.06));
+    border:1px solid var(--line-strong);border-radius:16px;padding:22px 26px;margin-bottom:34px;}
+  .rate .blk .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-muted);}
+  .rate .std{color:var(--ink-muted);text-decoration:line-through;font-size:16px;margin-top:2px;}
+  .rate .now{font-family:'Sora';font-weight:800;font-size:30px;color:var(--cyan-bright);line-height:1.1;}
+  .rate .disc{background:var(--green);color:#04101f;font-weight:800;font-size:13px;padding:5px 12px;border-radius:99px;}
+  .rate .txt{flex:1;min-width:220px;color:var(--ink-dim);font-size:13px;}
+
+  .already{background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.25);border-radius:14px;
+    padding:20px 24px;margin-bottom:14px;}
+  .already h3{font-size:15px;color:var(--green);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+  .already ul{margin:0;padding-left:20px;columns:2;color:var(--ink-dim);font-size:13px;}
+  .already ul li{margin:3px 0;break-inside:avoid;}
+
+  h2.sec{font-size:22px;margin:48px 0 6px;padding-bottom:8px;border-bottom:1px solid var(--line-strong);
+    display:flex;align-items:center;gap:10px;}
+  h2.sec .n{width:30px;height:30px;border-radius:9px;background:rgba(124,227,255,.1);
+    color:var(--cyan-bright);display:grid;place-items:center;font-size:14px;font-family:'Sora';}
+  .sec-desc{color:var(--ink-dim);font-size:13.5px;margin:8px 0 18px;}
+
+  table{width:100%;border-collapse:collapse;margin:6px 0 8px;font-size:13.5px;}
+  thead th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-muted);
+    padding:8px 12px;border-bottom:1px solid var(--line-strong);font-weight:600;}
+  tbody td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tbody tr:hover{background:rgba(124,227,255,.03);}
+  td.feat{font-weight:600;color:var(--ink);width:30%;}
+  td.price{white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:700;color:var(--cyan-bright);
+    width:18%;text-align:right;}
+  td.price small{display:block;font-weight:400;font-size:10px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em;}
+
+  .packs{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:8px;}
+  .pack{background:linear-gradient(180deg,rgba(15,59,82,.25),rgba(10,37,64,.4));
+    border:1px solid var(--line);border-radius:14px;padding:22px;position:relative;display:flex;flex-direction:column;}
+  .pack.featured{border-color:var(--cyan);box-shadow:0 0 0 1px rgba(26,184,224,.3);}
+  .pack h3{font-size:17px;margin-bottom:4px;color:var(--cyan-bright);}
+  .pack .tag{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-muted);margin-bottom:12px;}
+  .pack ul{margin:0 0 18px;padding-left:18px;color:var(--ink-dim);font-size:13px;}
+  .pack ul li{margin:4px 0;}
+  .pack .from{margin-top:auto;font-size:11px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.06em;}
+  .pack .amount{font-family:'Sora';font-weight:800;font-size:26px;color:var(--ink);}
+  .ribbon{position:absolute;top:14px;right:14px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+    background:var(--cyan);color:#04101f;padding:3px 8px;border-radius:99px;font-weight:700;}
+
+  .road{position:relative;margin-top:14px;padding-left:26px;}
+  .road:before{content:"";position:absolute;left:7px;top:6px;bottom:6px;width:2px;
+    background:linear-gradient(180deg,var(--cyan),rgba(124,227,255,.15));}
+  .phase{position:relative;margin-bottom:22px;}
+  .phase:before{content:"";position:absolute;left:-26px;top:3px;width:16px;height:16px;border-radius:50%;
+    background:var(--bg0);border:3px solid var(--cyan);}
+  .phase .ph-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+  .phase h4{font-size:16px;}
+  .phase .when{font-size:11px;color:var(--cyan-bright);text-transform:uppercase;letter-spacing:.08em;}
+  .phase .pp{font-variant-numeric:tabular-nums;font-size:13px;color:var(--cyan-bright);margin-left:auto;font-weight:700;}
+  .phase p{margin:5px 0 0;color:var(--ink-dim);font-size:13px;}
+  .prio{font-size:10px;padding:1px 8px;border-radius:99px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+  .p1{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.35);}
+  .p2{background:rgba(251,191,36,.12);color:var(--amber);border:1px solid rgba(251,191,36,.35);}
+  .p3{background:rgba(196,181,253,.12);color:var(--violet);border:1px solid rgba(196,181,253,.35);}
+
+  .totals{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px;}
+  .tot{background:rgba(124,227,255,.05);border:1px solid var(--line);border-radius:12px;padding:18px;text-align:center;}
+  .tot .lbl{font-size:11px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.08em;}
+  .tot .val{font-family:'Sora';font-weight:800;font-size:23px;color:var(--cyan-bright);margin-top:4px;}
+
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px;}
+  .step{background:linear-gradient(180deg,rgba(15,59,82,.18),rgba(10,37,64,.32));
+    border:1px solid var(--line);border-radius:12px;padding:18px;}
+  .step .num{width:26px;height:26px;border-radius:50%;background:var(--cyan);color:#04101f;
+    font-family:'Sora';font-weight:800;display:grid;place-items:center;font-size:13px;margin-bottom:10px;}
+  .step h4{font-size:14px;margin-bottom:4px;}
+  .step p{font-size:12.5px;color:var(--ink-dim);margin:0;}
+
+  .note{font-size:12px;color:var(--ink-muted);background:rgba(124,227,255,.04);border:1px dashed var(--line-strong);
+    border-radius:10px;padding:16px 18px;margin-top:16px;}
+  .note b{color:var(--ink-dim);}
+  footer{margin-top:54px;padding-top:18px;border-top:1px solid var(--line);font-size:11px;color:var(--ink-muted);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  @media print{
+    body{background:#fff;color:#0a2540;font-size:11.5px;}
+    .wrap{max-width:none;padding:0;}
+    .cover,.pack,.tot,.note,.rate,.already,.step,.phase{break-inside:avoid;}
+    h2.sec{break-after:avoid;}
+    .cover{background:#0a2540 !important;color:#fff;}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  }
+  @media(max-width:760px){.packs,.totals,.steps{grid-template-columns:1fr;}.already ul{columns:1;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- COUVERTURE -->
+  <div class="cover">
+    <div class="brand">
+      <div class="logo">PNM</div>
+      <div><div class="name">PNM SPORTS</div><div class="sub">Espace Agents · Plateforme digitale</div></div>
+    </div>
+    <h1>Faire passer votre plateforme<br/>au niveau supérieur</h1>
+    <p class="lead">Votre espace agents est en ligne et opérationnel. Voici les évolutions qui transformeront
+      l'outil en véritable moteur de votre activité : data, placement des joueurs, pilotage du chiffre d'affaires
+      et image de marque.</p>
+    <div class="meta">
+      <span><b>Proposition</b> · Évolutions & accompagnement</span>
+      <span><b>Date</b> · 30 juin 2026</span>
+      <span><b>Validité</b> · 60 jours</span>
+    </div>
+  </div>
+
+  <!-- TARIF PRÉFÉRENTIEL -->
+  <div class="rate">
+    <div class="blk">
+      <div class="lbl">Tarif journalier habituel</div>
+      <div class="std">750 – 800 € / jour</div>
+    </div>
+    <div class="blk">
+      <div class="lbl">Tarif consenti à PNM Sports</div>
+      <div class="now">550 € / jour HT</div>
+    </div>
+    <div class="disc">≈ –30 %</div>
+    <div class="txt">Dans le cadre de notre partenariat, l'ensemble de cette proposition est calculé sur un
+      <b>tarif préférentiel de 550 € HT / jour</b>, soit près de 30 % sous notre tarif standard. Tous les prix ci-dessous
+      en bénéficient déjà.</div>
+  </div>
+
+  <!-- DÉJÀ EN LIGNE -->
+  <div class="already">
+    <h3>✓ Déjà livré et inclus dans votre plateforme</h3>
+    <ul>
+      <li>Vitrine publique (experts, joueurs, contact, Instagram)</li>
+      <li>Espace agents sécurisé (connexion, rôles)</li>
+      <li>Gestion des joueurs & fiches détaillées</li>
+      <li>Tunnel de <b>prospection</b> (acquisition des joueurs)</li>
+      <li>Vue Kanban & suivi des étapes</li>
+      <li>Gestion des agents & droits (création, permissions)</li>
+      <li>Export Excel / CSV & fiches PDF</li>
+      <li>Suivi des fins de contrat (alerte &lt; 6 mois)</li>
+    </ul>
+  </div>
+  <p class="sec-desc">Les évolutions ci-dessous viennent enrichir cette base. Prix fermes « à partir de », en euros HT.</p>
+
+  <!-- 1 -->
+  <h2 class="sec"><span class="n">1</span> Data & évaluation des joueurs</h2>
+  <p class="sec-desc">Automatiser la donnée sportive et fiabiliser l'évaluation — votre meilleur argument face aux clubs et aux joueurs.</p>
+  <table>
+    <thead><tr><th>Évolution</th><th>Bénéfice</th><th>Prix</th></tr></thead>
+    <tbody>
+      <tr><td class="feat">Connexion BeSoccer Pro</td><td>Stats, matchs et valeurs marché récupérés automatiquement — fini la saisie manuelle.</td><td class="price">3 900 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Radar de notation</td><td>Profil visuel 6 axes alimenté par de vraies données dans vos fiches PDF.</td><td class="price">1 400 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Scouting interne</td><td>Vos agents notent les joueurs selon votre propre grille ; historique et moyennes.</td><td class="price">4 400 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Comparaison de joueurs</td><td>Mettre plusieurs joueurs côte à côte pour décider et convaincre.</td><td class="price">1 650 €<small>à partir de</small></td></tr>
+    </tbody>
+  </table>
+
+  <!-- 2 -->
+  <h2 class="sec"><span class="n">2</span> Placement des joueurs & chiffre d'affaires</h2>
+  <p class="sec-desc">La suite logique de la prospection : une fois le joueur signé, le placer dans un club et suivre vos commissions.</p>
+  <table>
+    <thead><tr><th>Évolution</th><th>Bénéfice</th><th>Prix</th></tr></thead>
+    <tbody>
+      <tr><td class="feat">Annuaire clubs & contacts</td><td>Tous vos interlocuteurs clubs et dirigeants centralisés, avec l'historique des échanges.</td><td class="price">3 900 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Pipeline transferts & mandats</td><td>Suivez chaque deal joueur↔club : offres reçues, conditions, fenêtres de mercato, statut.</td><td class="price">4 400 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Commissions & revenus</td><td>Pilotez vos commissions par deal, vos échéances et votre revenu prévisionnel.</td><td class="price">2 800 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Gestion des contrats</td><td>Clauses, renouvellements, alertes et documents liés à chaque joueur.</td><td class="price">2 800 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Agenda & rappels</td><td>Vos rendez-vous reliés à un calendrier, avec notifications.</td><td class="price">2 200 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Historique d'interactions</td><td>Le fil de tous vos appels, mails et notes par joueur.</td><td class="price">1 650 €<small>à partir de</small></td></tr>
+    </tbody>
+  </table>
+
+  <!-- 3 -->
+  <h2 class="sec"><span class="n">3</span> Communication & réactivité</h2>
+  <table>
+    <thead><tr><th>Évolution</th><th>Bénéfice</th><th>Prix</th></tr></thead>
+    <tbody>
+      <tr><td class="feat">Emails automatiques</td><td>Invitations, alertes fin de contrat, résumés hebdomadaires envoyés automatiquement.</td><td class="price">1 650 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Notifications dans l'app</td><td>Vos agents alertés en temps réel (nouveau prospect, étape franchie…).</td><td class="price">2 200 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Envoi de fiche par email</td><td>Transmettre une fiche joueur PDF à un club en un clic.</td><td class="price">600 €<small>à partir de</small></td></tr>
+    </tbody>
+  </table>
+
+  <!-- 4 -->
+  <h2 class="sec"><span class="n">4</span> Documents & média</h2>
+  <table>
+    <thead><tr><th>Évolution</th><th>Bénéfice</th><th>Prix</th></tr></thead>
+    <tbody>
+      <tr><td class="feat">Galerie vidéos / highlights</td><td>Les meilleures actions de vos joueurs intégrées à leur fiche.</td><td class="price">2 200 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Signature électronique</td><td>Faire signer mandats et contrats en ligne, sans impression.</td><td class="price">3 300 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Book / plaquette joueur</td><td>Une plaquette de présentation premium, prête à envoyer aux clubs.</td><td class="price">1 900 €<small>à partir de</small></td></tr>
+    </tbody>
+  </table>
+
+  <!-- 5 -->
+  <h2 class="sec"><span class="n">5</span> Pilotage & reporting</h2>
+  <table>
+    <thead><tr><th>Évolution</th><th>Bénéfice</th><th>Prix</th></tr></thead>
+    <tbody>
+      <tr><td class="feat">Tableau de bord avancé</td><td>Vos indicateurs clés par agent et le taux de conversion de votre prospection.</td><td class="price">2 800 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Rapports automatiques</td><td>Un reporting mensuel généré tout seul (PDF / Excel).</td><td class="price">1 650 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Vue portefeuille</td><td>La valeur totale de votre portefeuille joueurs, par poste et par échéance.</td><td class="price">1 900 €<small>à partir de</small></td></tr>
+    </tbody>
+  </table>
+
+  <!-- 6 -->
+  <h2 class="sec"><span class="n">6</span> Sécurité & conformité</h2>
+  <table>
+    <thead><tr><th>Évolution</th><th>Bénéfice</th><th>Prix</th></tr></thead>
+    <tbody>
+      <tr><td class="feat">Droits avancés par module</td><td>Affiner précisément ce que chaque agent peut voir et faire.</td><td class="price">1 900 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Journal d'audit</td><td>Tracer qui a fait quoi et quand, en toute transparence.</td><td class="price">1 650 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Double authentification (2FA)</td><td>Une sécurité renforcée pour vos comptes administrateurs.</td><td class="price">1 400 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Conformité RGPD avancée</td><td>Registre des consentements, export et suppression des données à la demande.</td><td class="price">2 200 €<small>à partir de</small></td></tr>
+    </tbody>
+  </table>
+
+  <!-- 7 -->
+  <h2 class="sec"><span class="n">7</span> Image & présence en ligne</h2>
+  <table>
+    <thead><tr><th>Évolution</th><th>Bénéfice</th><th>Prix</th></tr></thead>
+    <tbody>
+      <tr><td class="feat">Nom de domaine personnalisé</td><td>Votre adresse <code>pnmsport.com</code> pro et mémorisable, sécurisée (SSL).</td><td class="price">300 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Pages publiques joueurs</td><td>Présenter certains joueurs au grand public, en vitrine.</td><td class="price">2 800 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Site multilingue (FR / EN)</td><td>Toucher clubs et partenaires à l'international.</td><td class="price">2 200 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Référencement & statistiques</td><td>Être trouvé sur Google et mesurer votre audience.</td><td class="price">800 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Blog / actualités</td><td>Publier vos transferts et signatures depuis votre admin.</td><td class="price">2 200 €<small>à partir de</small></td></tr>
+    </tbody>
+  </table>
+
+  <!-- 8 -->
+  <h2 class="sec"><span class="n">8</span> Mobilité</h2>
+  <table>
+    <thead><tr><th>Évolution</th><th>Bénéfice</th><th>Prix</th></tr></thead>
+    <tbody>
+      <tr><td class="feat">Application mobile (PWA)</td><td>Votre espace agents installé sur smartphone, accessible partout.</td><td class="price">1 900 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Recherche avancée</td><td>Des filtres puissants et mémorisés pour retrouver un joueur en un instant.</td><td class="price">1 650 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">App native iOS / Android</td><td>Une application dédiée, publiée sur les stores.</td><td class="price">12 000 €<small>à partir de</small></td></tr>
+    </tbody>
+  </table>
+
+  <!-- PACKS -->
+  <h2 class="sec"><span class="n">★</span> Nos packs — la solution la plus avantageuse</h2>
+  <p class="sec-desc">Regroupez vos évolutions par objectif et bénéficiez d'un tarif bundle, en plus du tarif partenaire.</p>
+  <div class="packs">
+    <div class="pack featured"><span class="ribbon">Idéal pour démarrer</span>
+      <h3>Pack Quick Wins</h3><div class="tag">Résultats immédiats</div>
+      <ul><li>Nom de domaine personnalisé</li><li>Référencement & statistiques</li><li>Envoi de fiche par email</li><li>MAJ annuelle des clubs (1ʳᵉ année)</li></ul>
+      <div class="from">À partir de</div><div class="amount">1 900 € HT</div></div>
+
+    <div class="pack"><h3>Pack Communication</h3><div class="tag">Engagement & réactivité</div>
+      <ul><li>Emails automatiques</li><li>Notifications dans l'app</li><li>Envoi de fiche par email</li></ul>
+      <div class="from">À partir de</div><div class="amount">3 900 € HT</div></div>
+
+    <div class="pack featured"><span class="ribbon">Meilleur impact</span>
+      <h3>Pack Data & Scouting</h3><div class="tag">Votre différenciateur</div>
+      <ul><li>Connexion BeSoccer Pro</li><li>Radar de notation</li><li>Comparaison de joueurs</li><li>Option : scouting interne</li></ul>
+      <div class="from">À partir de</div><div class="amount">6 900 € HT</div></div>
+
+    <div class="pack"><h3>Pack Placement & CRM</h3><div class="tag">Le cœur de votre métier</div>
+      <ul><li>Annuaire clubs & contacts</li><li>Pipeline transferts & mandats</li><li>Commissions & revenus</li><li>Agenda + historique</li></ul>
+      <div class="from">À partir de</div><div class="amount">12 900 € HT</div></div>
+
+    <div class="pack"><h3>Pack Sécurité & Conformité</h3><div class="tag">Confiance & RGPD</div>
+      <ul><li>Droits avancés par module</li><li>Journal d'audit</li><li>Double authentification</li><li>Conformité RGPD avancée</li></ul>
+      <div class="from">À partir de</div><div class="amount">6 400 € HT</div></div>
+
+    <div class="pack"><h3>Pack Mobile & Pilotage</h3><div class="tag">Mobilité & décision</div>
+      <ul><li>Application mobile (PWA)</li><li>Recherche avancée</li><li>Tableau de bord avancé</li><li>Vue portefeuille</li></ul>
+      <div class="from">À partir de</div><div class="amount">6 900 € HT</div></div>
+  </div>
+
+  <!-- ROADMAP -->
+  <h2 class="sec"><span class="n">→</span> Un déploiement progressif, sans rupture</h2>
+  <p class="sec-desc">Nous avançons par étapes : des résultats visibles rapidement, puis la valeur métier, enfin le rayonnement.</p>
+  <div class="road">
+    <div class="phase"><div class="ph-head"><h4>Étape 1 — Fondations & gains rapides</h4><span class="when">Mois 0–2</span><span class="prio p1">Prioritaire</span><span class="pp">dès 3 700 €</span></div>
+      <p>Domaine personnalisé, référencement, emails automatiques, envoi de fiches. Des bénéfices visibles dès les premières semaines.</p></div>
+    <div class="phase"><div class="ph-head"><h4>Étape 2 — Placement & chiffre d'affaires</h4><span class="when">Mois 2–4</span><span class="prio p1">Prioritaire</span><span class="pp">dès 13 000 €</span></div>
+      <p>Annuaire clubs, pipeline transferts & mandats, commissions, agenda. La plateforme devient votre outil quotidien et suit vos revenus.</p></div>
+    <div class="phase"><div class="ph-head"><h4>Étape 3 — Data & scouting</h4><span class="when">Mois 4–7</span><span class="prio p2">Conseillé</span><span class="pp">dès 11 000 €</span></div>
+      <p>Connexion BeSoccer, radar de notation, scouting interne, comparaison. Vous vous démarquez auprès des clubs et des joueurs.</p></div>
+    <div class="phase"><div class="ph-head"><h4>Étape 4 — Pilotage & sécurité</h4><span class="when">Mois 7–9</span><span class="prio p2">Conseillé</span><span class="pp">dès 10 000 €</span></div>
+      <p>Tableau de bord, portefeuille, droits avancés, double authentification, RGPD. Votre plateforme prête à grandir.</p></div>
+    <div class="phase"><div class="ph-head"><h4>Étape 5 — Rayonnement</h4><span class="when">Mois 9–12</span><span class="prio p3">Confort & image</span><span class="pp">dès 12 000 €</span></div>
+      <p>Application mobile, multilingue, pages publiques joueurs, signature électronique, actualités. L'expérience premium.</p></div>
+  </div>
+
+  <div class="totals">
+    <div class="tot"><div class="lbl">Pour démarrer (Étapes 1+2)</div><div class="val">dès 17 000 € HT</div></div>
+    <div class="tot"><div class="lbl">Programme complet (12 mois)</div><div class="val">dès 50 000 € HT</div></div>
+    <div class="tot"><div class="lbl">Accompagnement mensuel</div><div class="val">dès 230 € / mois</div></div>
+  </div>
+
+  <!-- SERVICES RÉCURRENTS -->
+  <h2 class="sec"><span class="n">♻</span> Accompagnement & sérénité</h2>
+  <table>
+    <thead><tr><th>Service</th><th>Ce que vous obtenez</th><th>Prix</th></tr></thead>
+    <tbody>
+      <tr><td class="feat">Maintenance & support</td><td>Corrections, petites évolutions et assistance continue.</td><td class="price">dès 150 €<small>/ mois</small></td></tr>
+      <tr><td class="feat">Mise à jour des clubs (FFF)</td><td>Référentiel des clubs actualisé chaque saison.</td><td class="price">dès 300 €<small>/ an</small></td></tr>
+      <tr><td class="feat">Hébergement & supervision</td><td>Surveillance, sauvegardes et mises à jour techniques.</td><td class="price">dès 80 €<small>/ mois</small></td></tr>
+    </tbody>
+  </table>
+
+  <!-- PROCHAINES ÉTAPES -->
+  <h2 class="sec"><span class="n">✓</span> Prochaines étapes</h2>
+  <div class="steps">
+    <div class="step"><div class="num">1</div><h4>Atelier de cadrage</h4><p>On choisit ensemble les priorités et on affine le périmètre de l'étape retenue.</p></div>
+    <div class="step"><div class="num">2</div><h4>Devis détaillé</h4><p>Vous recevez un devis ferme par étape, sans surprise, avant tout lancement.</p></div>
+    <div class="step"><div class="num">3</div><h4>Livraison & démo</h4><p>Développement, validation sur un environnement de test, puis mise en ligne.</p></div>
+  </div>
+
+  <div class="note">
+    <b>Conditions.</b> Prix en euros HT, au tarif partenaire de 550 €/jour. Hors abonnements d'hébergement et licences
+    tierces éventuelles (ex. données sportives, signature électronique), souscrits directement par vos soins.
+    Modalités usuelles : 40 % à la commande, 30 % à mi-parcours, 30 % à la livraison. Chaque étape fait l'objet d'un
+    devis détaillé validé avant lancement.
+  </div>
+
+  <footer><span>PNM Sports — Proposition d'évolutions & accompagnement</span><span>30/06/2026 · Offre valable 60 jours</span></footer>
+</div>
+</body>
+</html>
