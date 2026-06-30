@@ -197,6 +197,13 @@ create policy "agents_admin_all" on public.agents
   using (public.is_admin())
   with check (public.is_admin());
 
+-- Protection du compte propriétaire : supprimable uniquement par lui-même
+-- (politique RESTRICTIVE, se combine en ET avec agents_admin_all).
+drop policy if exists "agents_protect_owner_delete" on public.agents;
+create policy "agents_protect_owner_delete" on public.agents
+  as restrictive for delete to authenticated
+  using (lower(email) <> 'gaffoum@gmail.com' or id = auth.uid());
+
 -- players :
 --   - admin : tout
 --   - agent : voit seulement les joueurs dont il est agent_referent

@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "../../lib/supabaseClient";
+import { useConfirm } from "../../contexts/ConfirmContext";
 
 export default function StatsTable({ playerId, stats, onChange }) {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ saison: "", matchs: 0, buts: 0, passes: 0, minutes_jouees: 0 });
+  const confirm = useConfirm();
 
   async function add() {
     if (!form.saison) return;
@@ -12,16 +15,21 @@ export default function StatsTable({ playerId, stats, onChange }) {
       .from("player_stats")
       .insert({ ...form, player_id: playerId })
       .select().single();
-    if (error) { alert(error.message); return; }
+    if (error) { toast.error(error.message); return; }
     onChange([data, ...stats]);
     setForm({ saison: "", matchs: 0, buts: 0, passes: 0, minutes_jouees: 0 });
     setAdding(false);
   }
 
   async function del(id) {
-    if (!confirm("Supprimer cette saison ?")) return;
+    const ok = await confirm({
+      title: "Supprimer cette saison ?",
+      confirmLabel: "Supprimer",
+      danger: true,
+    });
+    if (!ok) return;
     const { error } = await supabase.from("player_stats").delete().eq("id", id);
-    if (error) { alert(error.message); return; }
+    if (error) { toast.error(error.message); return; }
     onChange(stats.filter((s) => s.id !== id));
   }
 

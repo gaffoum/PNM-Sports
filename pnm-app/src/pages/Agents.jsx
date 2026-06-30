@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { UserPlus, Save, ShieldCheck, Search } from "lucide-react";
+import { UserPlus, Save, ShieldCheck, Search, Trash2 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "../hooks/useAuth";
+import { useConfirm } from "../contexts/ConfirmContext";
 import { PERMISSIONS } from "../lib/permissions";
 
+const OWNER_EMAIL = "gaffoum@gmail.com";
+
 export default function Agents() {
+  const { agent: me } = useAuth();
+  const confirm = useConfirm();
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ prenom: "", nom: "", email: "", role: "agent", password: "" });
@@ -38,6 +44,27 @@ export default function Agents() {
       .eq("id", ag.id);
     if (error) return toast.error(error.message);
     toast.success(`${ag.prenom} ${ag.nom} mis à jour`);
+  }
+
+  async function deleteAgent(ag) {
+    const isOwner = (ag.email || "").toLowerCase() === OWNER_EMAIL;
+    const iAmOwner = (me?.email || "").toLowerCase() === OWNER_EMAIL;
+    if (isOwner && !iAmOwner) {
+      return toast.error("Le compte propriétaire ne peut être supprimé que par lui-même.");
+    }
+    const ok = await confirm({
+      title: "Supprimer cet agent ?",
+      message: `${ag.prenom} ${ag.nom} (${ag.email})\nCette action est irréversible.`,
+      confirmLabel: "Supprimer",
+      danger: true,
+    });
+    if (!ok) return;
+    const { data, error } = await supabase.functions.invoke("admin-delete-agent", { body: { id: ag.id } });
+    if (error || data?.error) {
+      return toast.error(data?.error || "Suppression impossible (fonction « admin-delete-agent » déployée ?).");
+    }
+    toast.success(`${ag.prenom} ${ag.nom} supprimé.`);
+    setAgents((a) => a.filter((x) => x.id !== ag.id));
   }
 
   async function createAgent(e) {
@@ -107,6 +134,8 @@ export default function Agents() {
             .filter((a) => `${a.prenom} ${a.nom} ${a.email}`.toLowerCase().includes(q.trim().toLowerCase()))
             .map((ag) => {
             const isAdmin = ag.role === "admin";
+            const isOwner = (ag.email || "").toLowerCase() === OWNER_EMAIL;
+            const canDelete = !isOwner || (me?.email || "").toLowerCase() === OWNER_EMAIL;
             return (
               <div key={ag.id} className="panel p-5 space-y-4">
                 <div className="flex items-center justify-between flex-wrap gap-3">
@@ -127,6 +156,14 @@ export default function Agents() {
                       Actif
                     </label>
                     <button onClick={() => save(ag)} className="btn btn-primary px-3"><Save className="w-4 h-4" />Enregistrer</button>
+                    <button
+                      onClick={() => deleteAgent(ag)}
+                      disabled={!canDelete}
+                      className="btn btn-danger px-3"
+                      title={canDelete ? "Supprimer cet agent" : "Compte propriétaire — supprimable uniquement par lui-même"}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
 

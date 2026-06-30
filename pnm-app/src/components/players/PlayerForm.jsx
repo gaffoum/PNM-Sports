@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Save, X } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
 import { STEPS, STEP_KEYS, DEFAULT_STEP, statutForStep } from "../../lib/recruitment";
@@ -87,7 +88,7 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
         onSaved(data, "create");
       }
     } catch (e) {
-      alert("Erreur : " + e.message);
+      toast.error("Erreur : " + e.message);
     } finally {
       setSaving(false);
     }
