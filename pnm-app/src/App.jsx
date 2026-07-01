@@ -16,6 +16,8 @@ import PlayerCompare from "./pages/PlayerCompare";
 import Recruitment from "./pages/Recruitment";
 import Agents from "./pages/Agents";
 import Features from "./pages/Features";
+import ClubDirectory from "./pages/ClubDirectory";
+import ClubDetail from "./pages/ClubDetail";
 import Profile from "./pages/Profile";
 
 export default function App() {
@@ -41,6 +43,8 @@ export default function App() {
             <Route path="/players/compare" element={<FeatureGate feature="data_comparaison"><PlayerCompare /></FeatureGate>} />
             <Route path="/players/:id" element={<PlayerDetail />} />
             <Route path="/recrutement" element={<Recruitment />} />
+            <Route path="/clubs" element={<FeatureGate feature="placement_clubs"><ClubDirectory /></FeatureGate>} />
+            <Route path="/clubs/:club" element={<FeatureGate feature="placement_clubs"><ClubDetail /></FeatureGate>} />
             <Route path="/agents" element={<ProtectedRoute requireAdmin><Agents /></ProtectedRoute>} />
             <Route path="/features" element={<ProtectedRoute requireAdmin><Features /></ProtectedRoute>} />
             <Route path="/profile" element={<Profile />} />

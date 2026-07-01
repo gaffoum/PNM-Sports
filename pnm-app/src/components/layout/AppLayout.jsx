@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck, Sparkles, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck, Sparkles, Building2, Menu, X } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
+import { useFeatures } from "../../hooks/useFeatures";
 
 function NavItem({ to, icon: Icon, children, end, onClick }) {
   return (
@@ -21,7 +22,7 @@ function NavItem({ to, icon: Icon, children, end, onClick }) {
   );
 }
 
-function SidebarContent({ agent, isAdmin, onNavigate, onSignOut, goProfile }) {
+function SidebarContent({ agent, isAdmin, hasFeature, onNavigate, onSignOut, goProfile }) {
   return (
     <div className="flex flex-col h-full">
       {/* Marque */}
@@ -38,6 +39,7 @@ function SidebarContent({ agent, isAdmin, onNavigate, onSignOut, goProfile }) {
         <NavItem to="/dashboard" icon={LayoutDashboard} end onClick={onNavigate}>Tableau de bord</NavItem>
         <NavItem to="/players" icon={Users} onClick={onNavigate}>Joueurs</NavItem>
         <NavItem to="/recrutement" icon={LayoutGrid} onClick={onNavigate}>Prospection</NavItem>
+        {hasFeature("placement_clubs") && <NavItem to="/clubs" icon={Building2} onClick={onNavigate}>Clubs</NavItem>}
         <NavItem to="/players/new" icon={UserPlus} onClick={onNavigate}>Ajouter</NavItem>
         {isAdmin && <NavItem to="/agents" icon={ShieldCheck} onClick={onNavigate}>Agents</NavItem>}
         {isAdmin && <NavItem to="/features" icon={Sparkles} onClick={onNavigate}>Briques</NavItem>}
@@ -68,6 +70,7 @@ function SidebarContent({ agent, isAdmin, onNavigate, onSignOut, goProfile }) {
 
 export default function AppLayout() {
   const { agent, isAdmin, signOut } = useAuth();
+  const { hasFeature } = useFeatures();
   const nav = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -81,6 +84,7 @@ export default function AppLayout() {
     <SidebarContent
       agent={agent}
       isAdmin={isAdmin}
+      hasFeature={hasFeature}
       onNavigate={() => setMobileOpen(false)}
       onSignOut={handleSignOut}
       goProfile={() => nav("/profile")}

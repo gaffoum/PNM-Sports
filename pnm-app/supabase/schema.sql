@@ -307,6 +307,56 @@ create policy "activity_log_insert" on public.activity_log
   with check (public.is_agent() and agent_id = auth.uid());
 
 -- =====================================================================
+-- TABLES: club_contacts / club_activity (brique "Annuaire clubs & contacts")
+-- Le nom du club reste une chaine libre (aligne sur players.club_actuel) :
+-- pas de table "clubs" separee.
+-- =====================================================================
+create table if not exists public.club_contacts (
+  id uuid primary key default gen_random_uuid(),
+  club text not null,
+  nom text not null,
+  role text,
+  telephone text,
+  email text,
+  created_by uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create index if not exists club_contacts_club_idx on public.club_contacts(club);
+
+create table if not exists public.club_activity (
+  id uuid primary key default gen_random_uuid(),
+  club text not null,
+  note text not null,
+  agent_id uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create index if not exists club_activity_club_idx on public.club_activity(club);
+create index if not exists club_activity_created_at_idx on public.club_activity(created_at desc);
+
+alter table public.club_contacts enable row level security;
+alter table public.club_activity enable row level security;
+
+drop policy if exists "club_contacts_select" on public.club_contacts;
+create policy "club_contacts_select" on public.club_contacts
+  for select to authenticated using (public.is_agent());
+
+drop policy if exists "club_contacts_write" on public.club_contacts;
+create policy "club_contacts_write" on public.club_contacts
+  for all to authenticated
+  using (public.is_admin() or public.has_perm('edit_players'))
+  with check (public.is_admin() or public.has_perm('edit_players'));
+
+drop policy if exists "club_activity_select" on public.club_activity;
+create policy "club_activity_select" on public.club_activity
+  for select to authenticated using (public.is_agent());
+
+drop policy if exists "club_activity_write" on public.club_activity;
+create policy "club_activity_write" on public.club_activity
+  for all to authenticated
+  using (public.is_admin() or public.has_perm('edit_players'))
+  with check (public.is_admin() or public.has_perm('edit_players'));
+
+-- =====================================================================
 -- STORAGE policies (les buckets sont crees via API par scripts/setup.mjs)
 -- =====================================================================
 -- player-photos : public en lecture, ecriture par agents

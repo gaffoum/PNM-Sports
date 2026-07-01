@@ -12,7 +12,9 @@
     { "source": "/players/:path*", "destination": "/agent/index.html" },
     { "source": "/recrutement", "destination": "/agent/index.html" },
     { "source": "/agents", "destination": "/agent/index.html" },
-    { "source": "/features", "destination": "/agent/index.html" }
+    { "source": "/features", "destination": "/agent/index.html" },
+    { "source": "/clubs", "destination": "/agent/index.html" },
+    { "source": "/clubs/:path*", "destination": "/agent/index.html" }
   ],
   "headers": [
     {
