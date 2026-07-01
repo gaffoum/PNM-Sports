@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck, Sparkles, Building2, Menu, X } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { useFeatures } from "../../hooks/useFeatures";
+import { isOwner } from "../../lib/ownership";
 
 function NavItem({ to, icon: Icon, children, end, onClick }) {
   return (
@@ -42,7 +43,7 @@ function SidebarContent({ agent, isAdmin, hasFeature, onNavigate, onSignOut, goP
         {hasFeature("placement_clubs") && <NavItem to="/clubs" icon={Building2} onClick={onNavigate}>Clubs</NavItem>}
         <NavItem to="/players/new" icon={UserPlus} onClick={onNavigate}>Ajouter</NavItem>
         {isAdmin && <NavItem to="/agents" icon={ShieldCheck} onClick={onNavigate}>Agents</NavItem>}
-        {isAdmin && <NavItem to="/features" icon={Sparkles} onClick={onNavigate}>Briques</NavItem>}
+        {isOwner(agent) && <NavItem to="/features" icon={Sparkles} onClick={onNavigate}>Briques</NavItem>}
       </nav>
 
       {/* Utilisateur + actions */}

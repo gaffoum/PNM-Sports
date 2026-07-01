@@ -5,6 +5,7 @@ import { ConfirmProvider } from "./contexts/ConfirmContext";
 import { FeatureProvider } from "./contexts/FeatureContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import FeatureGate from "./components/auth/FeatureGate";
+import OwnerRoute from "./components/auth/OwnerRoute";
 import AppLayout from "./components/layout/AppLayout";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
@@ -46,7 +47,7 @@ export default function App() {
             <Route path="/clubs" element={<FeatureGate feature="placement_clubs"><ClubDirectory /></FeatureGate>} />
             <Route path="/clubs/:club" element={<FeatureGate feature="placement_clubs"><ClubDetail /></FeatureGate>} />
             <Route path="/agents" element={<ProtectedRoute requireAdmin><Agents /></ProtectedRoute>} />
-            <Route path="/features" element={<ProtectedRoute requireAdmin><Features /></ProtectedRoute>} />
+            <Route path="/features" element={<ProtectedRoute requireAdmin><OwnerRoute><Features /></OwnerRoute></ProtectedRoute>} />
             <Route path="/profile" element={<Profile />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

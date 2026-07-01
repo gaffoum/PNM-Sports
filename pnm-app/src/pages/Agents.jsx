@@ -5,8 +5,7 @@ import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../hooks/useAuth";
 import { useConfirm } from "../contexts/ConfirmContext";
 import { PERMISSIONS } from "../lib/permissions";
-
-const OWNER_EMAIL = "gaffoum@gmail.com";
+import { isOwner } from "../lib/ownership";
 
 export default function Agents() {
   const { agent: me } = useAuth();
@@ -50,9 +49,7 @@ export default function Agents() {
   }
 
   async function deleteAgent(ag) {
-    const isOwner = (ag.email || "").toLowerCase() === OWNER_EMAIL;
-    const iAmOwner = (me?.email || "").toLowerCase() === OWNER_EMAIL;
-    if (isOwner && !iAmOwner) {
+    if (isOwner(ag) && !isOwner(me)) {
       return toast.error("Le compte propriétaire ne peut être supprimé que par lui-même.");
     }
     const ok = await confirm({
@@ -161,11 +158,10 @@ export default function Agents() {
       ) : (
         <div className="space-y-3">
           {agents
+            .filter((a) => !isOwner(a))
             .filter((a) => `${a.prenom} ${a.nom} ${a.email}`.toLowerCase().includes(q.trim().toLowerCase()))
             .map((ag) => {
             const isAdmin = ag.role === "admin";
-            const isOwner = (ag.email || "").toLowerCase() === OWNER_EMAIL;
-            const canDelete = !isOwner || (me?.email || "").toLowerCase() === OWNER_EMAIL;
             return (
               <div key={ag.id} className="panel p-5 space-y-4">
                 <div className="flex items-center justify-between flex-wrap gap-3">
@@ -195,9 +191,8 @@ export default function Agents() {
                     </button>
                     <button
                       onClick={() => deleteAgent(ag)}
-                      disabled={!canDelete}
                       className="btn btn-danger px-3"
-                      title={canDelete ? "Supprimer cet agent" : "Compte propriétaire — supprimable uniquement par lui-même"}
+                      title="Supprimer cet agent"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
