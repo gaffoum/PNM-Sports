@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Search, Plus, Users, Contact, Pencil, Trash2, Check, X } from "lucide-react";
 import { listClubsDirectory, createClub, updateClub, deleteClub } from "../hooks/useClubs";
 import { useAuth } from "../hooks/useAuth";
 import { useConfirm } from "../contexts/ConfirmContext";
+import { COUNTRIES } from "../lib/countries";
 
 export default function ClubDirectory() {
   const nav = useNavigate();
@@ -85,17 +86,17 @@ export default function ClubDirectory() {
     }
   }
 
-  const countries = useMemo(() => {
-    const set = new Set(clubs.map((c) => c.pays).filter(Boolean));
-    return Array.from(set).sort((a, b) => a.localeCompare(b, "fr"));
-  }, [clubs]);
-
   const filtered = clubs.filter((c) =>
-    c.nom.toLowerCase().includes(q.trim().toLowerCase()) && (!country || c.pays === country)
+    c.nom.toLowerCase().includes(q.trim().toLowerCase()) &&
+    (!country.trim() || (c.pays || "").toLowerCase() === country.trim().toLowerCase())
   );
 
   return (
     <div className="space-y-6">
+      <datalist id="countries-list">
+        {COUNTRIES.map((p) => <option key={p} value={p} />)}
+      </datalist>
+
       <header>
         <h1 className="text-3xl">Clubs &amp; contacts</h1>
         <p className="text-ink-dim text-sm">Annuaire des clubs, dirigeants et historique des échanges.</p>
@@ -110,8 +111,9 @@ export default function ClubDirectory() {
             onChange={(e) => setNewClub({ ...newClub, nom: e.target.value })}
           />
           <input
-            className="input w-40"
+            className="input w-48"
             placeholder="Pays"
+            list="countries-list"
             value={newClub.pays}
             onChange={(e) => setNewClub({ ...newClub, pays: e.target.value })}
           />
@@ -124,10 +126,13 @@ export default function ClubDirectory() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
           <input className="input pl-10" placeholder="Rechercher un club…" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
-        <select className="input w-auto" value={country} onChange={(e) => setCountry(e.target.value)}>
-          <option value="">Tous les pays</option>
-          {countries.map((p) => <option key={p} value={p}>{p}</option>)}
-        </select>
+        <input
+          className="input w-48"
+          placeholder="Tous les pays"
+          list="countries-list"
+          value={country}
+          onChange={(e) => setCountry(e.target.value)}
+        />
       </div>
 
       {loading ? (
@@ -139,7 +144,7 @@ export default function ClubDirectory() {
               {editingId === c.id ? (
                 <div className="space-y-2">
                   <input className="input py-1.5" value={editForm.nom} onChange={(e) => setEditForm({ ...editForm, nom: e.target.value })} />
-                  <input className="input py-1.5" placeholder="Pays" value={editForm.pays} onChange={(e) => setEditForm({ ...editForm, pays: e.target.value })} />
+                  <input className="input py-1.5" placeholder="Pays" list="countries-list" value={editForm.pays} onChange={(e) => setEditForm({ ...editForm, pays: e.target.value })} />
                   <div className="flex gap-2">
                     <button onClick={() => saveEdit(c)} className="btn btn-primary px-2 py-1"><Check className="w-3.5 h-3.5" /></button>
                     <button onClick={() => setEditingId(null)} className="btn btn-ghost px-2 py-1"><X className="w-3.5 h-3.5" /></button>

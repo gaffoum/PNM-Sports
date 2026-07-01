@@ -11,6 +11,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useConfirm } from "../contexts/ConfirmContext";
 import { formatDateFr } from "../lib/utils";
 import { stepLabel, stepBadgeClass } from "../lib/recruitment";
+import { COUNTRIES } from "../lib/countries";
 
 const EMPTY_CONTACT = { nom: "", role: "", telephone: "", email: "" };
 
@@ -158,13 +159,17 @@ export default function ClubDetail() {
 
   return (
     <div className="space-y-6">
+      <datalist id="countries-list">
+        {COUNTRIES.map((p) => <option key={p} value={p} />)}
+      </datalist>
+
       <button onClick={() => nav("/clubs")} className="btn btn-ghost text-xs"><ArrowLeft className="w-4 h-4" />Clubs</button>
 
       <header className="flex items-start justify-between flex-wrap gap-3">
         {editingClub ? (
           <div className="flex flex-wrap items-center gap-2">
             <input className="input w-64" value={clubForm.nom} onChange={(e) => setClubForm({ ...clubForm, nom: e.target.value })} />
-            <input className="input w-40" placeholder="Pays" value={clubForm.pays} onChange={(e) => setClubForm({ ...clubForm, pays: e.target.value })} />
+            <input className="input w-48" placeholder="Pays" list="countries-list" value={clubForm.pays} onChange={(e) => setClubForm({ ...clubForm, pays: e.target.value })} />
             <button onClick={saveClub} className="btn btn-primary px-3"><Check className="w-4 h-4" /></button>
             <button onClick={() => setEditingClub(false)} className="btn btn-ghost px-3"><X className="w-4 h-4" /></button>
           </div>
