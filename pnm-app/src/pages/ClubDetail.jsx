@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Phone, Mail, MessageSquarePlus, Users } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Phone, Mail, MessageSquarePlus, Users, Pencil, Check, X } from "lucide-react";
 import {
+  getClubByNom, updateClub, deleteClub,
   getClubContacts, getClubActivity, getClubPlayers,
-  addClubContact, deleteClubContact, addClubActivity,
+  addClubContact, deleteClubContact, addClubActivity, updateClubActivity,
 } from "../hooks/useClubs";
 import { useAuth } from "../hooks/useAuth";
 import { useConfirm } from "../contexts/ConfirmContext";
@@ -15,41 +16,84 @@ const EMPTY_CONTACT = { nom: "", role: "", telephone: "", email: "" };
 
 export default function ClubDetail() {
   const { club: clubParam } = useParams();
-  const club = decodeURIComponent(clubParam);
+  const clubNom = decodeURIComponent(clubParam);
   const nav = useNavigate();
   const { agent, isAdmin, can } = useAuth();
   const confirm = useConfirm();
   const canEdit = isAdmin || can("edit_players");
 
+  const [club, setClub] = useState(null);
   const [contacts, setContacts] = useState([]);
   const [activity, setActivity] = useState([]);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [editingClub, setEditingClub] = useState(false);
+  const [clubForm, setClubForm] = useState({ nom: "", pays: "" });
+
   const [contactForm, setContactForm] = useState(EMPTY_CONTACT);
   const [savingContact, setSavingContact] = useState(false);
   const [note, setNote] = useState("");
   const [savingNote, setSavingNote] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [editingNoteText, setEditingNoteText] = useState("");
 
   async function load() {
     setLoading(true);
     try {
-      const [c, a, p] = await Promise.all([getClubContacts(club), getClubActivity(club), getClubPlayers(club)]);
-      setContacts(c); setActivity(a); setPlayers(p);
+      const c = await getClubByNom(clubNom);
+      if (!c) { toast.error("Club introuvable."); nav("/clubs"); return; }
+      setClub(c);
+      setClubForm({ nom: c.nom, pays: c.pays || "" });
+      const [contactsData, activityData, playersData] = await Promise.all([
+        getClubContacts(c.id), getClubActivity(c.id), getClubPlayers(c.nom),
+      ]);
+      setContacts(contactsData); setActivity(activityData); setPlayers(playersData);
     } catch (e) {
       toast.error(e.message);
     } finally {
       setLoading(false);
     }
   }
-  useEffect(() => { load(); }, [club]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [clubNom]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function saveClub() {
+    if (!clubForm.nom.trim()) return toast.error("Le nom du club est requis.");
+    try {
+      const updated = await updateClub(club.id, { nom: clubForm.nom.trim(), pays: clubForm.pays.trim() });
+      setClub(updated);
+      setEditingClub(false);
+      toast.success("Club mis à jour");
+      if (updated.nom !== clubNom) nav(`/clubs/${encodeURIComponent(updated.nom)}`, { replace: true });
+    } catch (e) {
+      if (e.code === "23505") toast.error("Un club porte déjà ce nom.");
+      else toast.error(e.message);
+    }
+  }
+
+  async function removeClub() {
+    const ok = await confirm({
+      title: "Supprimer ce club ?",
+      message: `${club.nom}\nSes contacts et son historique d'échanges seront supprimés.\nLes joueurs déjà associés à ce club ne sont pas modifiés.`,
+      confirmLabel: "Supprimer",
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await deleteClub(club.id);
+      toast.success("Club supprimé");
+      nav("/clubs");
+    } catch (e) {
+      toast.error(e.message);
+    }
+  }
 
   async function submitContact(e) {
     e.preventDefault();
     if (!contactForm.nom.trim()) return toast.error("Le nom du contact est requis.");
     setSavingContact(true);
     try {
-      const created = await addClubContact({ club, ...contactForm, created_by: agent.id });
+      const created = await addClubContact({ club_id: club.id, ...contactForm, created_by: agent.id });
       setContacts((cs) => [...cs, created]);
       setContactForm(EMPTY_CONTACT);
       toast.success("Contact ajouté");
@@ -82,7 +126,7 @@ export default function ClubDetail() {
     if (!note.trim()) return;
     setSavingNote(true);
     try {
-      const created = await addClubActivity({ club, note: note.trim(), agent_id: agent.id });
+      const created = await addClubActivity({ club_id: club.id, note: note.trim(), agent_id: agent.id });
       setActivity((as) => [created, ...as]);
       setNote("");
     } catch (e) {
@@ -92,109 +136,162 @@ export default function ClubDetail() {
     }
   }
 
+  function startEditNote(a) {
+    setEditingNoteId(a.id);
+    setEditingNoteText(a.note);
+  }
+
+  async function saveNote(a) {
+    if (!editingNoteText.trim()) return toast.error("La note ne peut pas être vide.");
+    try {
+      const updated = await updateClubActivity(a.id, editingNoteText.trim());
+      setActivity((as) => as.map((x) => (x.id === a.id ? updated : x)));
+      setEditingNoteId(null);
+      toast.success("Note modifiée");
+    } catch (e) {
+      toast.error(e.message);
+    }
+  }
+
+  if (loading) return <div className="text-ink-dim">Chargement…</div>;
+  if (!club) return null;
+
   return (
     <div className="space-y-6">
       <button onClick={() => nav("/clubs")} className="btn btn-ghost text-xs"><ArrowLeft className="w-4 h-4" />Clubs</button>
 
-      <header>
-        <h1 className="text-3xl">{club}</h1>
-        <p className="text-ink-dim text-sm">Contacts, historique des échanges et joueurs PNM dans ce club.</p>
+      <header className="flex items-start justify-between flex-wrap gap-3">
+        {editingClub ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <input className="input w-64" value={clubForm.nom} onChange={(e) => setClubForm({ ...clubForm, nom: e.target.value })} />
+            <input className="input w-40" placeholder="Pays" value={clubForm.pays} onChange={(e) => setClubForm({ ...clubForm, pays: e.target.value })} />
+            <button onClick={saveClub} className="btn btn-primary px-3"><Check className="w-4 h-4" /></button>
+            <button onClick={() => setEditingClub(false)} className="btn btn-ghost px-3"><X className="w-4 h-4" /></button>
+          </div>
+        ) : (
+          <div>
+            <h1 className="text-3xl">{club.nom}</h1>
+            <p className="text-ink-dim text-sm">{club.pays || "Pays non renseigné"} · Contacts, historique et joueurs PNM.</p>
+          </div>
+        )}
+        {canEdit && !editingClub && (
+          <div className="flex gap-2">
+            <button onClick={() => setEditingClub(true)} className="btn btn-outline px-3"><Pencil className="w-4 h-4" />Modifier</button>
+            <button onClick={removeClub} className="btn btn-danger px-3"><Trash2 className="w-4 h-4" />Supprimer</button>
+          </div>
+        )}
       </header>
 
-      {loading ? (
-        <div className="text-ink-dim">Chargement…</div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Contacts */}
-          <div className="panel p-5 space-y-3">
-            <h3 className="text-sm uppercase tracking-wider text-cyan-bright">Contacts</h3>
-            {contacts.length === 0 && <p className="text-sm text-ink-dim">Aucun contact enregistré.</p>}
-            <ul className="divide-y divide-line">
-              {contacts.map((c) => (
-                <li key={c.id} className="py-2.5 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate">{c.nom}{c.role && <span className="text-ink-dim"> — {c.role}</span>}</div>
-                    <div className="flex items-center gap-3 text-[11px] text-ink-muted mt-0.5">
-                      {c.telephone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{c.telephone}</span>}
-                      {c.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{c.email}</span>}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Contacts */}
+        <div className="panel p-5 space-y-3">
+          <h3 className="text-sm uppercase tracking-wider text-cyan-bright">Contacts</h3>
+          {contacts.length === 0 && <p className="text-sm text-ink-dim">Aucun contact enregistré.</p>}
+          <ul className="divide-y divide-line">
+            {contacts.map((c) => (
+              <li key={c.id} className="py-2.5 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium truncate">{c.nom}{c.role && <span className="text-ink-dim"> — {c.role}</span>}</div>
+                  <div className="flex items-center gap-3 text-[11px] text-ink-muted mt-0.5">
+                    {c.telephone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{c.telephone}</span>}
+                    {c.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{c.email}</span>}
+                  </div>
+                </div>
+                {canEdit && (
+                  <button onClick={() => removeContact(c)} className="btn btn-ghost p-1.5" title="Supprimer">
+                    <Trash2 className="w-3.5 h-3.5 text-red-300" />
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+          {canEdit && (
+            <form onSubmit={submitContact} className="grid grid-cols-2 gap-2 pt-2 border-t border-line">
+              <input className="input" placeholder="Nom" value={contactForm.nom} onChange={(e) => setContactForm({ ...contactForm, nom: e.target.value })} />
+              <input className="input" placeholder="Rôle (ex. directeur sportif)" value={contactForm.role} onChange={(e) => setContactForm({ ...contactForm, role: e.target.value })} />
+              <input className="input" placeholder="Téléphone" value={contactForm.telephone} onChange={(e) => setContactForm({ ...contactForm, telephone: e.target.value })} />
+              <input className="input" type="email" placeholder="Email" value={contactForm.email} onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })} />
+              <button type="submit" disabled={savingContact} className="btn btn-primary col-span-2 w-fit">
+                <Plus className="w-4 h-4" />{savingContact ? "…" : "Ajouter le contact"}
+              </button>
+            </form>
+          )}
+        </div>
+
+        {/* Historique des échanges */}
+        <div className="panel p-5 space-y-3">
+          <h3 className="text-sm uppercase tracking-wider text-cyan-bright">Historique des échanges</h3>
+          {canEdit && (
+            <form onSubmit={submitNote} className="flex flex-col gap-2">
+              <textarea
+                className="input min-h-[70px]"
+                placeholder="Ajouter une note (appel, mail, rendez-vous…)"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
+              <button type="submit" disabled={savingNote} className="btn btn-outline w-fit">
+                <MessageSquarePlus className="w-4 h-4" />{savingNote ? "…" : "Ajouter la note"}
+              </button>
+            </form>
+          )}
+          {activity.length === 0 && <p className="text-sm text-ink-dim">Aucun échange enregistré.</p>}
+          <ul className="divide-y divide-line">
+            {activity.map((a) => (
+              <li key={a.id} className="py-2.5">
+                {editingNoteId === a.id ? (
+                  <div className="space-y-2">
+                    <textarea className="input min-h-[60px]" value={editingNoteText} onChange={(e) => setEditingNoteText(e.target.value)} />
+                    <div className="flex gap-2">
+                      <button onClick={() => saveNote(a)} className="btn btn-primary px-2 py-1"><Check className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => setEditingNoteId(null)} className="btn btn-ghost px-2 py-1"><X className="w-3.5 h-3.5" /></button>
                     </div>
                   </div>
-                  {canEdit && (
-                    <button onClick={() => removeContact(c)} className="btn btn-ghost p-1.5" title="Supprimer">
-                      <Trash2 className="w-3.5 h-3.5 text-red-300" />
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-            {canEdit && (
-              <form onSubmit={submitContact} className="grid grid-cols-2 gap-2 pt-2 border-t border-line">
-                <input className="input" placeholder="Nom" value={contactForm.nom} onChange={(e) => setContactForm({ ...contactForm, nom: e.target.value })} />
-                <input className="input" placeholder="Rôle (ex. directeur sportif)" value={contactForm.role} onChange={(e) => setContactForm({ ...contactForm, role: e.target.value })} />
-                <input className="input" placeholder="Téléphone" value={contactForm.telephone} onChange={(e) => setContactForm({ ...contactForm, telephone: e.target.value })} />
-                <input className="input" type="email" placeholder="Email" value={contactForm.email} onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })} />
-                <button type="submit" disabled={savingContact} className="btn btn-primary col-span-2 w-fit">
-                  <Plus className="w-4 h-4" />{savingContact ? "…" : "Ajouter le contact"}
-                </button>
-              </form>
-            )}
-          </div>
-
-          {/* Historique des échanges */}
-          <div className="panel p-5 space-y-3">
-            <h3 className="text-sm uppercase tracking-wider text-cyan-bright">Historique des échanges</h3>
-            {canEdit && (
-              <form onSubmit={submitNote} className="flex flex-col gap-2">
-                <textarea
-                  className="input min-h-[70px]"
-                  placeholder="Ajouter une note (appel, mail, rendez-vous…)"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                />
-                <button type="submit" disabled={savingNote} className="btn btn-outline w-fit">
-                  <MessageSquarePlus className="w-4 h-4" />{savingNote ? "…" : "Ajouter la note"}
-                </button>
-              </form>
-            )}
-            {activity.length === 0 && <p className="text-sm text-ink-dim">Aucun échange enregistré.</p>}
-            <ul className="divide-y divide-line">
-              {activity.map((a) => (
-                <li key={a.id} className="py-2.5">
-                  <p className="text-sm whitespace-pre-wrap">{a.note}</p>
-                  <div className="text-[11px] text-ink-muted mt-1">
-                    {a.agent ? `${a.agent.prenom} ${a.agent.nom}` : "—"} · {formatDateFr(a.created_at)}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Joueurs PNM dans ce club */}
-          <div className="panel p-5 space-y-3 lg:col-span-2">
-            <h3 className="text-sm uppercase tracking-wider text-cyan-bright flex items-center gap-2">
-              <Users className="w-4 h-4" />Joueurs PNM dans ce club
-            </h3>
-            {players.length === 0 && <p className="text-sm text-ink-dim">Aucun joueur de PNM actuellement dans ce club.</p>}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {players.map((p) => (
-                <Link key={p.id} to={`/players/${p.id}`} className="flex items-center gap-2 p-2.5 rounded-lg border border-line hover:border-line-strong transition-colors">
-                  {p.photo_url ? (
-                    <img src={p.photo_url} alt="" className="w-9 h-9 rounded-full object-cover border border-line" />
-                  ) : (
-                    <div className="w-9 h-9 rounded-full bg-bg-1 border border-line grid place-items-center text-[10px] text-ink-muted">
-                      {(p.prenom?.[0] ?? "") + (p.nom?.[0] ?? "")}
+                ) : (
+                  <>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm whitespace-pre-wrap">{a.note}</p>
+                      {canEdit && (
+                        <button onClick={() => startEditNote(a)} className="btn btn-ghost p-1.5 shrink-0" title="Modifier">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
-                  )}
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate">{p.prenom} {p.nom}</div>
-                    <span className={`badge ${stepBadgeClass(p.recruitment_step)}`}>{stepLabel(p.recruitment_step)}</span>
+                    <div className="text-[11px] text-ink-muted mt-1">
+                      {a.agent ? `${a.agent.prenom} ${a.agent.nom}` : "—"} · {formatDateFr(a.created_at)}
+                      {a.updated_at && <> · modifiée le {formatDateFr(a.updated_at)}</>}
+                    </div>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Joueurs PNM dans ce club */}
+        <div className="panel p-5 space-y-3 lg:col-span-2">
+          <h3 className="text-sm uppercase tracking-wider text-cyan-bright flex items-center gap-2">
+            <Users className="w-4 h-4" />Joueurs PNM dans ce club
+          </h3>
+          {players.length === 0 && <p className="text-sm text-ink-dim">Aucun joueur de PNM actuellement dans ce club.</p>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {players.map((p) => (
+              <Link key={p.id} to={`/players/${p.id}`} className="flex items-center gap-2 p-2.5 rounded-lg border border-line hover:border-line-strong transition-colors">
+                {p.photo_url ? (
+                  <img src={p.photo_url} alt="" className="w-9 h-9 rounded-full object-cover border border-line" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-bg-1 border border-line grid place-items-center text-[10px] text-ink-muted">
+                    {(p.prenom?.[0] ?? "") + (p.nom?.[0] ?? "")}
                   </div>
-                </Link>
-              ))}
-            </div>
+                )}
+                <div className="min-w-0">
+                  <div className="text-sm font-medium truncate">{p.prenom} {p.nom}</div>
+                  <span className={`badge ${stepBadgeClass(p.recruitment_step)}`}>{stepLabel(p.recruitment_step)}</span>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

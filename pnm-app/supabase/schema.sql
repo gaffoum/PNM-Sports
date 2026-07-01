@@ -176,6 +176,17 @@ as $$
   );
 $$;
 
+-- Compte "SuperAdmin" (proprietaire de l'agence) : au-dessus du role admin,
+-- seul habilite a piloter les briques commerciales (/features).
+create or replace function public.is_owner() returns boolean
+language sql security definer stable
+as $$
+  select exists (
+    select 1 from public.agents
+    where id = auth.uid() and lower(email) = 'gaffoum@gmail.com'
+  );
+$$;
+
 -- =====================================================================
 -- RLS
 -- =====================================================================
@@ -307,13 +318,39 @@ create policy "activity_log_insert" on public.activity_log
   with check (public.is_agent() and agent_id = auth.uid());
 
 -- =====================================================================
--- TABLES: club_contacts / club_activity (brique "Annuaire clubs & contacts")
--- Le nom du club reste une chaine libre (aligne sur players.club_actuel) :
--- pas de table "clubs" separee.
+-- TABLES: clubs / club_contacts / club_activity (brique "Annuaire clubs & contacts")
+-- clubs = entite maitresse (nom unique, pays), editable/supprimable.
 -- =====================================================================
+create table if not exists public.clubs (
+  id uuid primary key default gen_random_uuid(),
+  nom text not null unique,
+  pays text,
+  created_by uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists clubs_pays_idx on public.clubs(pays);
+
+drop trigger if exists clubs_set_updated_at on public.clubs;
+create trigger clubs_set_updated_at
+before update on public.clubs
+for each row execute function public.set_updated_at();
+
+alter table public.clubs enable row level security;
+
+drop policy if exists "clubs_select" on public.clubs;
+create policy "clubs_select" on public.clubs
+  for select to authenticated using (public.is_agent());
+
+drop policy if exists "clubs_write" on public.clubs;
+create policy "clubs_write" on public.clubs
+  for all to authenticated
+  using (public.is_admin() or public.has_perm('edit_players'))
+  with check (public.is_admin() or public.has_perm('edit_players'));
+
 create table if not exists public.club_contacts (
   id uuid primary key default gen_random_uuid(),
-  club text not null,
+  club_id uuid not null references public.clubs(id) on delete cascade,
   nom text not null,
   role text,
   telephone text,
@@ -321,16 +358,17 @@ create table if not exists public.club_contacts (
   created_by uuid references public.agents(id) on delete set null,
   created_at timestamptz not null default now()
 );
-create index if not exists club_contacts_club_idx on public.club_contacts(club);
+create index if not exists club_contacts_club_id_idx on public.club_contacts(club_id);
 
 create table if not exists public.club_activity (
   id uuid primary key default gen_random_uuid(),
-  club text not null,
+  club_id uuid not null references public.clubs(id) on delete cascade,
   note text not null,
   agent_id uuid references public.agents(id) on delete set null,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz
 );
-create index if not exists club_activity_club_idx on public.club_activity(club);
+create index if not exists club_activity_club_id_idx on public.club_activity(club_id);
 create index if not exists club_activity_created_at_idx on public.club_activity(created_at desc);
 
 alter table public.club_contacts enable row level security;
@@ -421,8 +459,9 @@ create policy "features_select_authenticated" on public.features
   for select to authenticated
   using (public.is_agent());
 
+-- Reserve au SuperAdmin (proprietaire), pas aux administrateurs classiques.
 drop policy if exists "features_admin_write" on public.features;
 create policy "features_admin_write" on public.features
   for all to authenticated
-  using (public.is_admin())
-  with check (public.is_admin());
+  using (public.is_owner())
+  with check (public.is_owner());

@@ -1,17 +1,15 @@
 import { supabase } from "../lib/supabaseClient";
-import { CLUBS } from "../lib/clubs";
 
-// Liste des clubs = référentiel FFF ∪ clubs de joueurs ∪ clubs déjà présents
-// dans l'annuaire (contact ou note ajoutée sans référentiel, ex. club étranger).
+// Annuaire clubs — source de vérité : table public.clubs (nom unique, pays).
 export async function listClubsDirectory() {
-  const [playersRes, contactsRes, activityRes] = await Promise.all([
+  const [clubsRes, playersRes, contactsRes] = await Promise.all([
+    supabase.from("clubs").select("*").order("nom"),
     supabase.from("players").select("club_actuel").not("club_actuel", "is", null),
-    supabase.from("club_contacts").select("club"),
-    supabase.from("club_activity").select("club"),
+    supabase.from("club_contacts").select("club_id"),
   ]);
+  if (clubsRes.error) throw clubsRes.error;
   if (playersRes.error) throw playersRes.error;
   if (contactsRes.error) throw contactsRes.error;
-  if (activityRes.error) throw activityRes.error;
 
   const playerCounts = {};
   (playersRes.data ?? []).forEach((r) => {
@@ -20,43 +18,60 @@ export async function listClubsDirectory() {
   });
   const contactCounts = {};
   (contactsRes.data ?? []).forEach((r) => {
-    contactCounts[r.club] = (contactCounts[r.club] ?? 0) + 1;
+    contactCounts[r.club_id] = (contactCounts[r.club_id] ?? 0) + 1;
   });
-  const activityClubs = (activityRes.data ?? []).map((r) => r.club);
 
-  const names = new Set([...CLUBS, ...Object.keys(playerCounts), ...Object.keys(contactCounts), ...activityClubs]);
-
-  return Array.from(names)
-    .filter(Boolean)
-    .sort((a, b) => a.localeCompare(b, "fr"))
-    .map((name) => ({
-      name,
-      playerCount: playerCounts[name] ?? 0,
-      contactCount: contactCounts[name] ?? 0,
-    }));
+  return (clubsRes.data ?? []).map((c) => ({
+    ...c,
+    playerCount: playerCounts[c.nom] ?? 0,
+    contactCount: contactCounts[c.id] ?? 0,
+  }));
 }
 
-export async function getClubContacts(club) {
-  const { data, error } = await supabase.from("club_contacts").select("*").eq("club", club).order("created_at");
+export async function getClubByNom(nom) {
+  const { data, error } = await supabase.from("clubs").select("*").eq("nom", nom).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function createClub({ nom, pays, created_by }) {
+  const { data, error } = await supabase.from("clubs").insert({ nom, pays: pays || null, created_by }).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateClub(id, { nom, pays }) {
+  const { data, error } = await supabase.from("clubs").update({ nom, pays: pays || null }).eq("id", id).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteClub(id) {
+  const { error } = await supabase.from("clubs").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function getClubContacts(clubId) {
+  const { data, error } = await supabase.from("club_contacts").select("*").eq("club_id", clubId).order("created_at");
   if (error) throw error;
   return data ?? [];
 }
 
-export async function getClubActivity(club) {
+export async function getClubActivity(clubId) {
   const { data, error } = await supabase
     .from("club_activity")
     .select("*, agent:agents(prenom, nom)")
-    .eq("club", club)
+    .eq("club_id", clubId)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data ?? [];
 }
 
-export async function getClubPlayers(club) {
+export async function getClubPlayers(clubNom) {
   const { data, error } = await supabase
     .from("players")
     .select("id, nom, prenom, poste, photo_url, statut, recruitment_step")
-    .eq("club_actuel", club)
+    .eq("club_actuel", clubNom)
     .order("nom");
   if (error) throw error;
   return data ?? [];
@@ -75,6 +90,17 @@ export async function deleteClubContact(id) {
 
 export async function addClubActivity(payload) {
   const { data, error } = await supabase.from("club_activity").insert(payload).select("*, agent:agents(prenom, nom)").single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateClubActivity(id, note) {
+  const { data, error } = await supabase
+    .from("club_activity")
+    .update({ note, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select("*, agent:agents(prenom, nom)")
+    .single();
   if (error) throw error;
   return data;
 }
