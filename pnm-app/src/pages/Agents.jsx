@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { UserPlus, Save, ShieldCheck, Search, Trash2 } from "lucide-react";
+import { UserPlus, Save, ShieldCheck, Search, Trash2, KeyRound } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../hooks/useAuth";
 import { useConfirm } from "../contexts/ConfirmContext";
@@ -16,6 +16,9 @@ export default function Agents() {
   const [form, setForm] = useState({ prenom: "", nom: "", email: "", role: "agent", password: "" });
   const [creating, setCreating] = useState(false);
   const [q, setQ] = useState("");
+  const [pwdOpenId, setPwdOpenId] = useState(null);
+  const [pwdValue, setPwdValue] = useState("");
+  const [pwdBusy, setPwdBusy] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -65,6 +68,33 @@ export default function Agents() {
     }
     toast.success(`${ag.prenom} ${ag.nom} supprimé.`);
     setAgents((a) => a.filter((x) => x.id !== ag.id));
+  }
+
+  function togglePwdRow(id) {
+    setPwdOpenId((cur) => (cur === id ? null : id));
+    setPwdValue("");
+  }
+
+  async function setPassword(ag) {
+    if (pwdValue.length < 8) return toast.error("Mot de passe : 8 caractères minimum.");
+    const ok = await confirm({
+      title: "Redéfinir ce mot de passe ?",
+      message: `${ag.prenom} ${ag.nom} (${ag.email})\nL'agent devra le changer à sa prochaine connexion.`,
+      confirmLabel: "Redéfinir",
+      danger: true,
+    });
+    if (!ok) return;
+    setPwdBusy(true);
+    const { data, error } = await supabase.functions.invoke("admin-set-password", {
+      body: { id: ag.id, password: pwdValue },
+    });
+    setPwdBusy(false);
+    if (error || data?.error) {
+      return toast.error(data?.error || "Action impossible (fonction « admin-set-password » déployée ?).");
+    }
+    toast.success(`Mot de passe redéfini pour ${ag.prenom} ${ag.nom}.`);
+    setPwdOpenId(null);
+    setPwdValue("");
   }
 
   async function createAgent(e) {
@@ -157,6 +187,13 @@ export default function Agents() {
                     </label>
                     <button onClick={() => save(ag)} className="btn btn-primary px-3"><Save className="w-4 h-4" />Enregistrer</button>
                     <button
+                      onClick={() => togglePwdRow(ag.id)}
+                      className="btn btn-outline px-3"
+                      title="Redéfinir le mot de passe"
+                    >
+                      <KeyRound className="w-4 h-4" />
+                    </button>
+                    <button
                       onClick={() => deleteAgent(ag)}
                       disabled={!canDelete}
                       className="btn btn-danger px-3"
@@ -166,6 +203,26 @@ export default function Agents() {
                     </button>
                   </div>
                 </div>
+
+                {pwdOpenId === ag.id && (
+                  <div className="flex flex-wrap items-center gap-2 bg-bg-1 border border-line rounded-lg p-3">
+                    <input
+                      type="text"
+                      className="input flex-1 min-w-[200px]"
+                      placeholder="Nouveau mot de passe (8 car. min.)"
+                      value={pwdValue}
+                      onChange={(e) => setPwdValue(e.target.value)}
+                      autoFocus
+                    />
+                    <button onClick={() => setPassword(ag)} disabled={pwdBusy} className="btn btn-primary px-3">
+                      <KeyRound className="w-4 h-4" />{pwdBusy ? "…" : "Redéfinir"}
+                    </button>
+                    <button onClick={() => togglePwdRow(ag.id)} className="btn btn-ghost px-3">Annuler</button>
+                    <p className="text-[11px] text-ink-muted w-full">
+                      L'agent devra changer ce mot de passe à sa prochaine connexion.
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <div className="text-[11px] uppercase tracking-wider text-ink-muted mb-2">Droits</div>
