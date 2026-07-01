@@ -6,6 +6,7 @@ import { listClubsDirectory, createClub, updateClub, deleteClub } from "../hooks
 import { useAuth } from "../hooks/useAuth";
 import { useConfirm } from "../contexts/ConfirmContext";
 import { COUNTRIES } from "../lib/countries";
+import AutocompleteInput from "../components/common/AutocompleteInput";
 
 export default function ClubDirectory() {
   const nav = useNavigate();
@@ -88,15 +89,11 @@ export default function ClubDirectory() {
 
   const filtered = clubs.filter((c) =>
     c.nom.toLowerCase().includes(q.trim().toLowerCase()) &&
-    (!country.trim() || (c.pays || "").toLowerCase() === country.trim().toLowerCase())
+    (!country.trim() || (c.pays || "").toLowerCase().includes(country.trim().toLowerCase()))
   );
 
   return (
     <div className="space-y-6">
-      <datalist id="countries-list">
-        {COUNTRIES.map((p) => <option key={p} value={p} />)}
-      </datalist>
-
       <header>
         <h1 className="text-3xl">Clubs &amp; contacts</h1>
         <p className="text-ink-dim text-sm">Annuaire des clubs, dirigeants et historique des échanges.</p>
@@ -110,12 +107,12 @@ export default function ClubDirectory() {
             value={newClub.nom}
             onChange={(e) => setNewClub({ ...newClub, nom: e.target.value })}
           />
-          <input
-            className="input w-48"
+          <AutocompleteInput
+            className="w-48"
             placeholder="Pays"
-            list="countries-list"
+            options={COUNTRIES}
             value={newClub.pays}
-            onChange={(e) => setNewClub({ ...newClub, pays: e.target.value })}
+            onChange={(v) => setNewClub({ ...newClub, pays: v })}
           />
           <button type="submit" className="btn btn-primary px-3"><Plus className="w-4 h-4" />Ajouter</button>
         </form>
@@ -126,12 +123,12 @@ export default function ClubDirectory() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
           <input className="input pl-10" placeholder="Rechercher un club…" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
-        <input
-          className="input w-48"
+        <AutocompleteInput
+          className="w-48"
           placeholder="Tous les pays"
-          list="countries-list"
+          options={COUNTRIES}
           value={country}
-          onChange={(e) => setCountry(e.target.value)}
+          onChange={setCountry}
         />
       </div>
 
@@ -144,7 +141,13 @@ export default function ClubDirectory() {
               {editingId === c.id ? (
                 <div className="space-y-2">
                   <input className="input py-1.5" value={editForm.nom} onChange={(e) => setEditForm({ ...editForm, nom: e.target.value })} />
-                  <input className="input py-1.5" placeholder="Pays" list="countries-list" value={editForm.pays} onChange={(e) => setEditForm({ ...editForm, pays: e.target.value })} />
+                  <AutocompleteInput
+                    className="py-1.5"
+                    placeholder="Pays"
+                    options={COUNTRIES}
+                    value={editForm.pays}
+                    onChange={(v) => setEditForm({ ...editForm, pays: v })}
+                  />
                   <div className="flex gap-2">
                     <button onClick={() => saveEdit(c)} className="btn btn-primary px-2 py-1"><Check className="w-3.5 h-3.5" /></button>
                     <button onClick={() => setEditingId(null)} className="btn btn-ghost px-2 py-1"><X className="w-3.5 h-3.5" /></button>
