@@ -3,13 +3,16 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useReactTable, getCoreRowModel, flexRender } from "@tanstack/react-table";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
-import { ChevronLeft, ChevronRight, Download, Plus, ArrowUpDown, FileSpreadsheet, UserCheck } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Plus, ArrowUpDown, FileSpreadsheet, UserCheck, GitCompareArrows, X } from "lucide-react";
 import { usePlayers } from "../hooks/usePlayers";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../hooks/useAuth";
+import { useFeatures } from "../hooks/useFeatures";
 import PlayerSearch from "../components/players/PlayerSearch";
 import { calcAge, formatDateFr, formatMoney } from "../lib/utils";
 import { STEPS, stepLabel, stepShort, stepBadgeClass } from "../lib/recruitment";
+
+const MAX_COMPARE = 3;
 
 const PAGE_SIZE = 20;
 
@@ -47,10 +50,13 @@ function StepCard({ tone, label, value, active, onClick }) {
 export default function PlayerList() {
   const nav = useNavigate();
   const { agent } = useAuth();
+  const { hasFeature } = useFeatures();
+  const canCompare = hasFeature("data_comparaison");
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({});
   const [sort, setSort] = useState({ column: "created_at", asc: false });
+  const [compareIds, setCompareIds] = useState([]);
 
   const { rows, count, loading } = usePlayers({ page, pageSize: PAGE_SIZE, search, filters, sort });
 
@@ -98,7 +104,29 @@ export default function PlayerList() {
     setSort((s) => s.column === column ? { column, asc: !s.asc } : { column, asc: true });
   }
 
+  function toggleCompare(id) {
+    setCompareIds((ids) => {
+      if (ids.includes(id)) return ids.filter((x) => x !== id);
+      if (ids.length >= MAX_COMPARE) return ids;
+      return [...ids, id];
+    });
+  }
+
   const columns = useMemo(() => [
+    ...(canCompare ? [{
+      id: "compare",
+      header: "",
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          checked={compareIds.includes(row.original.id)}
+          onChange={() => toggleCompare(row.original.id)}
+          onClick={(e) => e.stopPropagation()}
+          disabled={!compareIds.includes(row.original.id) && compareIds.length >= MAX_COMPARE}
+          title="Sélectionner pour comparer"
+        />
+      ),
+    }] : []),
     {
       accessorKey: "photo_url",
       header: "",
@@ -140,7 +168,7 @@ export default function PlayerList() {
       header: "Agent",
       cell: ({ row }) => row.original.agent ? `${row.original.agent.prenom} ${row.original.agent.nom}` : "—",
     },
-  ], []);
+  ], [canCompare, compareIds]);
 
   const table = useReactTable({ data: rows, columns, getCoreRowModel: getCoreRowModel() });
 
@@ -220,7 +248,7 @@ export default function PlayerList() {
             <tr className="border-b border-line text-left text-[11px] uppercase tracking-wider text-ink-muted">
               {table.getHeaderGroups()[0].headers.map((h) => (
                 <th key={h.id} className="px-4 py-3 font-semibold whitespace-nowrap">
-                  {h.column.id !== "photo_url" && h.column.id !== "agent" ? (
+                  {h.column.id !== "photo_url" && h.column.id !== "agent" && h.column.id !== "compare" ? (
                     <button onClick={() => toggleSort(h.column.id)} className="inline-flex items-center gap-1 hover:text-ink">
                       {flexRender(h.column.columnDef.header, h.getContext())}
                       <ArrowUpDown className="w-3 h-3" />
@@ -265,6 +293,22 @@ export default function PlayerList() {
           </button>
         </div>
       </div>
+
+      {canCompare && compareIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 panel px-4 py-3 flex items-center gap-3 shadow-2xl">
+          <span className="text-sm text-ink-dim">{compareIds.length} sélectionné{compareIds.length > 1 ? "s" : ""} / {MAX_COMPARE}</span>
+          <button
+            onClick={() => nav(`/players/compare?ids=${compareIds.join(",")}`)}
+            disabled={compareIds.length < 2}
+            className="btn btn-primary px-3"
+          >
+            <GitCompareArrows className="w-4 h-4" />Comparer
+          </button>
+          <button onClick={() => setCompareIds([])} className="btn btn-ghost px-2" title="Vider la sélection">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

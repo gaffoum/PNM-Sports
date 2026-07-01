@@ -4,6 +4,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ConfirmProvider } from "./contexts/ConfirmContext";
 import { FeatureProvider } from "./contexts/FeatureContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import FeatureGate from "./components/auth/FeatureGate";
 import AppLayout from "./components/layout/AppLayout";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
@@ -11,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import PlayerList from "./pages/PlayerList";
 import PlayerDetail from "./pages/PlayerDetail";
 import PlayerCreate from "./pages/PlayerCreate";
+import PlayerCompare from "./pages/PlayerCompare";
 import Recruitment from "./pages/Recruitment";
 import Agents from "./pages/Agents";
 import Features from "./pages/Features";
@@ -36,6 +38,7 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/players" element={<PlayerList />} />
             <Route path="/players/new" element={<PlayerCreate />} />
+            <Route path="/players/compare" element={<FeatureGate feature="data_comparaison"><PlayerCompare /></FeatureGate>} />
             <Route path="/players/:id" element={<PlayerDetail />} />
             <Route path="/recrutement" element={<Recruitment />} />
             <Route path="/agents" element={<ProtectedRoute requireAdmin><Agents /></ProtectedRoute>} />
