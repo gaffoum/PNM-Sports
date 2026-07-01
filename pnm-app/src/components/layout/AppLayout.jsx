@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck, Sparkles, Menu, X } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
 function NavItem({ to, icon: Icon, children, end, onClick }) {
@@ -40,6 +40,7 @@ function SidebarContent({ agent, isAdmin, onNavigate, onSignOut, goProfile }) {
         <NavItem to="/recrutement" icon={LayoutGrid} onClick={onNavigate}>Prospection</NavItem>
         <NavItem to="/players/new" icon={UserPlus} onClick={onNavigate}>Ajouter</NavItem>
         {isAdmin && <NavItem to="/agents" icon={ShieldCheck} onClick={onNavigate}>Agents</NavItem>}
+        {isAdmin && <NavItem to="/features" icon={Sparkles} onClick={onNavigate}>Briques</NavItem>}
       </nav>
 
       {/* Utilisateur + actions */}

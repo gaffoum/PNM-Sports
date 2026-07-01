@@ -350,3 +350,29 @@ drop policy if exists "player_documents_agent_delete" on storage.objects;
 create policy "player_documents_agent_delete" on storage.objects
   for delete to authenticated
   using (bucket_id = 'player-documents' and public.is_agent());
+
+-- =====================================================================
+-- TABLE: features (système de "briques" — feature flags facturables)
+-- =====================================================================
+create table if not exists public.features (
+  key text primary key,
+  label text not null,
+  pack text,
+  enabled boolean not null default false,
+  enabled_at timestamptz,
+  enabled_by uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.features enable row level security;
+
+drop policy if exists "features_select_authenticated" on public.features;
+create policy "features_select_authenticated" on public.features
+  for select to authenticated
+  using (public.is_agent());
+
+drop policy if exists "features_admin_write" on public.features;
+create policy "features_admin_write" on public.features
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
