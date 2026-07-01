@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { pdf } from "@react-pdf/renderer";
-import { Pencil, Trash2, Download, Upload, ArrowLeft, FileText } from "lucide-react";
+import { Pencil, Trash2, Download, Upload, ArrowLeft, FileText, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "../lib/supabaseClient";
 import { getPlayerById, getPlayerStats, getPlayerDocuments } from "../hooks/usePlayers";
 import { useAuth } from "../hooks/useAuth";
 import { useConfirm } from "../contexts/ConfirmContext";
-import { calcAge, formatDateFr, formatMoney } from "../lib/utils";
+import { useFeatures } from "../hooks/useFeatures";
+import { calcAge, formatDateFr, formatMoney, blobToBase64 } from "../lib/utils";
 import { logActivity } from "../lib/logActivity";
 import { STEPS, statutForStep, stepLabel, stepBadgeClass } from "../lib/recruitment";
 import PlayerForm from "../components/players/PlayerForm";
@@ -30,6 +31,7 @@ export default function PlayerDetail() {
   const nav = useNavigate();
   const { agent } = useAuth();
   const confirm = useConfirm();
+  const { hasFeature } = useFeatures();
   const fileRef = useRef(null);
 
   const [player, setPlayer] = useState(null);
@@ -39,6 +41,9 @@ export default function PlayerDetail() {
   const [editing, setEditing] = useState(false);
   const [cropSrc, setCropSrc] = useState(null);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
+  const [sendEmail, setSendEmail] = useState("");
+  const [sendBusy, setSendBusy] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -133,6 +138,27 @@ export default function PlayerDetail() {
     }
   }
 
+  async function sendPdfEmail() {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sendEmail)) return toast.error("Adresse e-mail invalide.");
+    setSendBusy(true);
+    try {
+      const blob = await pdf(<PlayerPdf player={player} stats={stats} />).toBlob();
+      const pdfBase64 = await blobToBase64(blob);
+      const { data, error } = await supabase.functions.invoke("send-player-pdf", {
+        body: { to: sendEmail, playerName: `${player.prenom} ${player.nom}`, pdfBase64 },
+      });
+      if (error || data?.error) throw new Error(data?.error || error.message);
+      logActivity(agent.id, player.id, "send_pdf_email", { to: sendEmail });
+      toast.success(`Fiche envoyée à ${sendEmail}`);
+      setSendOpen(false);
+      setSendEmail("");
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setSendBusy(false);
+    }
+  }
+
   if (loading) return <div className="text-ink-dim">Chargement…</div>;
   if (!player) return null;
 
@@ -203,8 +229,29 @@ export default function PlayerDetail() {
             </select>
             <button onClick={() => setEditing(true)} className="btn btn-outline"><Pencil className="w-4 h-4" />Modifier</button>
             <button onClick={exportPdf} className="btn btn-outline" disabled={pdfBusy}><FileText className="w-4 h-4" />{pdfBusy ? "PDF…" : "Exporter en PDF"}</button>
+            {hasFeature("comm_envoi_pdf") && (
+              <button onClick={() => setSendOpen((v) => !v)} className="btn btn-outline">
+                <Mail className="w-4 h-4" />Envoyer par email
+              </button>
+            )}
             <button onClick={deletePlayer} className="btn btn-danger"><Trash2 className="w-4 h-4" />Supprimer</button>
           </div>
+          {sendOpen && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 bg-bg-1 border border-line rounded-lg p-3">
+              <input
+                type="email"
+                className="input flex-1 min-w-[220px]"
+                placeholder="Email du destinataire (club, contact…)"
+                value={sendEmail}
+                onChange={(e) => setSendEmail(e.target.value)}
+                autoFocus
+              />
+              <button onClick={sendPdfEmail} disabled={sendBusy} className="btn btn-primary px-3">
+                <Mail className="w-4 h-4" />{sendBusy ? "Envoi…" : "Envoyer"}
+              </button>
+              <button onClick={() => { setSendOpen(false); setSendEmail(""); }} className="btn btn-ghost px-3">Annuler</button>
+            </div>
+          )}
         </div>
       </section>
 

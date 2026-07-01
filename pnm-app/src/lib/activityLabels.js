@@ -8,6 +8,7 @@ const ACTION_LABELS = {
   update_step: "Mise à jour statut",
   delete_player: "Suppression de la fiche",
   export_pdf: "Export PDF",
+  send_pdf_email: "Envoi de la fiche PDF par email",
 };
 
 // Retourne une description française explicite de l'activité.
@@ -18,6 +19,9 @@ export function describeActivity(action, details) {
     if (from && to) return `Mise à jour statut ${stepLabel(from)} vers ${stepLabel(to)}`;
     if (to) return `Mise à jour statut vers ${stepLabel(to)}`;
     return "Mise à jour statut";
+  }
+  if (action === "send_pdf_email" && details?.to) {
+    return `Envoi de la fiche PDF par email à ${details.to}`;
   }
   return ACTION_LABELS[action] ?? action;
 }
