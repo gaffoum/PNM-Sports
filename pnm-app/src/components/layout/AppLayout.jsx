@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck, Sparkles, Building2, ClipboardList, CalendarClock, GitMerge, Euro, ShieldAlert, ScrollText, Wallet, FileBarChart, Newspaper, FileText, ChevronDown, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck, Sparkles, Building2, ClipboardList, CalendarClock, GitMerge, Euro, ShieldAlert, ScrollText, Wallet, FileBarChart, Newspaper, FileText, Scale, BookMarked, ChevronDown, Menu, X } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { useFeatures } from "../../hooks/useFeatures";
 import { useLanguage } from "../../hooks/useLanguage";
@@ -90,6 +90,15 @@ function SidebarContent({ agent, isAdmin, hasFeature, onNavigate, onSignOut, goP
         {hasFeature("placement_commissions") && <NavItem to="/commissions" icon={Euro} onClick={onNavigate}>{t("nav.commissions")}</NavItem>}
         {hasFeature("pilotage_portefeuille") && <NavItem to="/portefeuille" icon={Wallet} onClick={onNavigate}>{t("nav.portfolio")}</NavItem>}
         {hasFeature("media_generateur_documents") && <NavItem to="/documents" icon={FileText} onClick={onNavigate}>{t("nav.documents")}</NavItem>}
+        {hasFeature("data_assistant_juridique") && (
+          isAdmin ? (
+            <NavGroup to="/assistant-juridique" icon={Scale} label={t("nav.legal_assistant")} onNavigate={onNavigate}>
+              <NavItem to="/assistant-juridique/sources" icon={BookMarked} onClick={onNavigate} sub>{t("nav.legal_sources")}</NavItem>
+            </NavGroup>
+          ) : (
+            <NavItem to="/assistant-juridique" icon={Scale} onClick={onNavigate}>{t("nav.legal_assistant")}</NavItem>
+          )
+        )}
         {isAdmin && <NavItem to="/agents" icon={ShieldCheck} onClick={onNavigate}>{t("nav.agents")}</NavItem>}
         {isAdmin && hasFeature("secu_audit") && <NavItem to="/audit" icon={ShieldAlert} onClick={onNavigate}>{t("nav.audit")}</NavItem>}
         {isAdmin && hasFeature("secu_rgpd") && <NavItem to="/rgpd" icon={ScrollText} onClick={onNavigate}>{t("nav.rgpd")}</NavItem>}

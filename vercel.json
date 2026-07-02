@@ -28,7 +28,9 @@
     { "source": "/actualites", "destination": "/agent/index.html" },
     { "source": "/actualites/:path*", "destination": "/agent/index.html" },
     { "source": "/documents", "destination": "/agent/index.html" },
-    { "source": "/documents/:path*", "destination": "/agent/index.html" }
+    { "source": "/documents/:path*", "destination": "/agent/index.html" },
+    { "source": "/assistant-juridique", "destination": "/agent/index.html" },
+    { "source": "/assistant-juridique/:path*", "destination": "/agent/index.html" }
   ],
   "headers": [
     {

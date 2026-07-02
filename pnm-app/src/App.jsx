@@ -35,6 +35,8 @@ import BlogAdmin from "./pages/BlogAdmin";
 import Documents from "./pages/Documents";
 import DocumentGenerate from "./pages/DocumentGenerate";
 import DocumentTemplates from "./pages/DocumentTemplates";
+import LegalAssistant from "./pages/LegalAssistant";
+import LegalSources from "./pages/LegalSources";
 import PwaRegistration from "./components/common/PwaRegistration";
 
 export default function App() {
@@ -80,6 +82,8 @@ export default function App() {
             <Route path="/documents" element={<FeatureGate feature="media_generateur_documents"><Documents /></FeatureGate>} />
             <Route path="/documents/nouveau" element={<FeatureGate feature="media_generateur_documents"><DocumentGenerate /></FeatureGate>} />
             <Route path="/documents/modeles" element={<ProtectedRoute requireAdmin><FeatureGate feature="media_generateur_documents"><DocumentTemplates /></FeatureGate></ProtectedRoute>} />
+            <Route path="/assistant-juridique" element={<FeatureGate feature="data_assistant_juridique"><LegalAssistant /></FeatureGate>} />
+            <Route path="/assistant-juridique/sources" element={<ProtectedRoute requireAdmin><FeatureGate feature="data_assistant_juridique"><LegalSources /></FeatureGate></ProtectedRoute>} />
             <Route path="/features" element={<ProtectedRoute requireAdmin><OwnerRoute><Features /></OwnerRoute></ProtectedRoute>} />
             <Route path="/profile" element={<Profile />} />
           </Route>

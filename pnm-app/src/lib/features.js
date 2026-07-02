@@ -20,6 +20,7 @@ export const FEATURES = [
   { key: "data_radar_reel",       label: "Radar de notation réel",             pack: "data_scouting" },
   { key: "data_scouting_interne", label: "Scouting interne (grille agents)",   pack: "data_scouting" },
   { key: "data_comparaison",      label: "Comparaison de joueurs",             pack: "data_scouting" },
+  { key: "data_assistant_juridique", label: "Assistant IA droit du sport",     pack: "data_scouting" },
   { key: "placement_clubs",       label: "Annuaire clubs & contacts",          pack: "placement_crm" },
   { key: "placement_pipeline",    label: "Pipeline transferts & mandats",      pack: "placement_crm" },
   { key: "placement_commissions", label: "Commissions & revenus",              pack: "placement_crm" },
