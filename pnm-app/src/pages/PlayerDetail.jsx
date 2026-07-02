@@ -5,6 +5,8 @@ import { Pencil, Trash2, Download, Upload, ArrowLeft, FileText, Mail } from "luc
 import { toast } from "sonner";
 import { supabase } from "../lib/supabaseClient";
 import { getPlayerById, getPlayerStats, getPlayerDocuments } from "../hooks/usePlayers";
+import { listInteractionsByPlayer } from "../hooks/usePlayerInteractions";
+import { listAppointmentsByPlayer } from "../hooks/useAppointments";
 import { useAuth } from "../hooks/useAuth";
 import { useConfirm } from "../contexts/ConfirmContext";
 import { useFeatures } from "../hooks/useFeatures";
@@ -15,6 +17,8 @@ import PlayerForm from "../components/players/PlayerForm";
 import PhotoCropper from "../components/players/PhotoCropper";
 import StatsTable from "../components/players/StatsTable";
 import DocumentsList from "../components/players/DocumentsList";
+import InteractionsPanel from "../components/players/InteractionsPanel";
+import AppointmentsPanel from "../components/players/AppointmentsPanel";
 import PlayerPdf from "../components/players/PlayerPdf";
 
 function Info({ label, value }) {
@@ -37,7 +41,11 @@ export default function PlayerDetail() {
   const [player, setPlayer] = useState(null);
   const [stats, setStats] = useState([]);
   const [docs, setDocs] = useState([]);
+  const [interactions, setInteractions] = useState([]);
+  const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const hasHistorique = hasFeature("placement_historique");
+  const hasAgenda = hasFeature("placement_agenda");
   const [editing, setEditing] = useState(false);
   const [cropSrc, setCropSrc] = useState(null);
   const [pdfBusy, setPdfBusy] = useState(false);
@@ -50,9 +58,13 @@ export default function PlayerDetail() {
     (async () => {
       setLoading(true);
       try {
-        const [p, s, d] = await Promise.all([getPlayerById(id), getPlayerStats(id), getPlayerDocuments(id)]);
+        const [p, s, d, ints, appts] = await Promise.all([
+          getPlayerById(id), getPlayerStats(id), getPlayerDocuments(id),
+          hasHistorique ? listInteractionsByPlayer(id) : Promise.resolve([]),
+          hasAgenda ? listAppointmentsByPlayer(id) : Promise.resolve([]),
+        ]);
         if (!active) return;
-        setPlayer(p); setStats(s); setDocs(d);
+        setPlayer(p); setStats(s); setDocs(d); setInteractions(ints); setAppointments(appts);
       } catch (e) {
         toast.error(e.message);
         nav("/players");
@@ -61,7 +73,7 @@ export default function PlayerDetail() {
       }
     })();
     return () => { active = false; };
-  }, [id, nav]);
+  }, [id, nav, hasHistorique, hasAgenda]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function onPickPhoto(e) {
     const f = e.target.files?.[0]; if (!f) return;
@@ -288,6 +300,8 @@ export default function PlayerDetail() {
 
       <StatsTable playerId={player.id} stats={stats} onChange={setStats} />
       <DocumentsList playerId={player.id} documents={docs} onChange={setDocs} />
+      {hasAgenda && <AppointmentsPanel playerId={player.id} appointments={appointments} onChange={setAppointments} />}
+      {hasHistorique && <InteractionsPanel playerId={player.id} interactions={interactions} onChange={setInteractions} />}
 
       {player.notes && (
         <section className="panel p-5">
