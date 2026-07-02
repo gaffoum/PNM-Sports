@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck, Sparkles, Building2, ClipboardList, CalendarClock, GitMerge, Euro, ShieldAlert, ScrollText, Wallet, FileBarChart, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck, Sparkles, Building2, ClipboardList, CalendarClock, GitMerge, Euro, ShieldAlert, ScrollText, Wallet, FileBarChart, Newspaper, Menu, X } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { useFeatures } from "../../hooks/useFeatures";
 import { isOwner } from "../../lib/ownership";
@@ -57,6 +57,7 @@ function SidebarContent({ agent, isAdmin, hasFeature, onNavigate, onSignOut, goP
         {isAdmin && hasFeature("secu_audit") && <NavItem to="/audit" icon={ShieldAlert} onClick={onNavigate}>Journal d'audit</NavItem>}
         {isAdmin && hasFeature("secu_rgpd") && <NavItem to="/rgpd" icon={ScrollText} onClick={onNavigate}>Demandes RGPD</NavItem>}
         {isAdmin && hasFeature("pilotage_rapports") && <NavItem to="/rapports" icon={FileBarChart} onClick={onNavigate}>Rapports</NavItem>}
+        {isAdmin && hasFeature("vitrine_blog") && <NavItem to="/blog" icon={Newspaper} onClick={onNavigate}>Blog</NavItem>}
         {isOwner(agent) && <NavItem to="/features" icon={Sparkles} onClick={onNavigate}>Briques</NavItem>}
       </nav>
 

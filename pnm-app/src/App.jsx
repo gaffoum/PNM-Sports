@@ -28,6 +28,9 @@ import RgpdRequests from "./pages/RgpdRequests";
 import Portfolio from "./pages/Portfolio";
 import Reports from "./pages/Reports";
 import Profile from "./pages/Profile";
+import VitrinePublic from "./pages/VitrinePublic";
+import BlogPublic from "./pages/BlogPublic";
+import BlogAdmin from "./pages/BlogAdmin";
 import PwaRegistration from "./components/common/PwaRegistration";
 
 export default function App() {
@@ -41,6 +44,9 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/vitrine" element={<VitrinePublic />} />
+          <Route path="/actualites" element={<BlogPublic />} />
+          <Route path="/actualites/:slug" element={<BlogPublic />} />
           <Route
             element={
               <ProtectedRoute>
@@ -65,6 +71,7 @@ export default function App() {
             <Route path="/rgpd" element={<ProtectedRoute requireAdmin><FeatureGate feature="secu_rgpd"><RgpdRequests /></FeatureGate></ProtectedRoute>} />
             <Route path="/portefeuille" element={<FeatureGate feature="pilotage_portefeuille"><Portfolio /></FeatureGate>} />
             <Route path="/rapports" element={<ProtectedRoute requireAdmin><FeatureGate feature="pilotage_rapports"><Reports /></FeatureGate></ProtectedRoute>} />
+            <Route path="/blog" element={<ProtectedRoute requireAdmin><FeatureGate feature="vitrine_blog"><BlogAdmin /></FeatureGate></ProtectedRoute>} />
             <Route path="/features" element={<ProtectedRoute requireAdmin><OwnerRoute><Features /></OwnerRoute></ProtectedRoute>} />
             <Route path="/profile" element={<Profile />} />
           </Route>

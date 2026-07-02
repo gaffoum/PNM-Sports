@@ -22,7 +22,11 @@
     { "source": "/audit", "destination": "/agent/index.html" },
     { "source": "/rgpd", "destination": "/agent/index.html" },
     { "source": "/portefeuille", "destination": "/agent/index.html" },
-    { "source": "/rapports", "destination": "/agent/index.html" }
+    { "source": "/rapports", "destination": "/agent/index.html" },
+    { "source": "/blog", "destination": "/agent/index.html" },
+    { "source": "/vitrine", "destination": "/agent/index.html" },
+    { "source": "/actualites", "destination": "/agent/index.html" },
+    { "source": "/actualites/:path*", "destination": "/agent/index.html" }
   ],
   "headers": [
     {

@@ -6,6 +6,7 @@ import { Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
+import { useFeatures } from "../../hooks/useFeatures";
 import { STEPS, STEP_KEYS, DEFAULT_STEP, statutForStep } from "../../lib/recruitment";
 import { CLUBS } from "../../lib/clubs";
 
@@ -28,6 +29,7 @@ const schema = z.object({
   agent_referent: z.string().uuid().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
   consentement_rgpd: z.boolean().optional(),
+  vitrine_public: z.boolean().optional(),
 });
 
 function cleanForDB(values) {
@@ -42,6 +44,8 @@ function cleanForDB(values) {
 
 export default function PlayerForm({ player, onCancel, onSaved }) {
   const { agent, isAdmin, can } = useAuth();
+  const { hasFeature } = useFeatures();
+  const hasVitrine = hasFeature("vitrine_public_joueurs");
   const canAssign = isAdmin || can("edit_players");
   const [agents, setAgents] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -52,6 +56,7 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
       recruitment_step: DEFAULT_STEP,
       agent_referent: agent?.id ?? "",
       consentement_rgpd: false,
+      vitrine_public: false,
       ...player,
       date_naissance: player?.date_naissance ?? "",
       fin_contrat: player?.fin_contrat ?? "",
@@ -181,6 +186,18 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
           </span>
         </label>
       </section>
+
+      {hasVitrine && (
+        <section className="panel p-5">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" className="mt-1" {...register("vitrine_public")} />
+            <span className="text-sm text-ink-dim">
+              Afficher ce joueur sur l'<b>espace public</b> du site (nom, poste, nationalité, club actuel, photo).
+              Nécessite le consentement RGPD ci-dessus.
+            </span>
+          </label>
+        </section>
+      )}
 
       <div className="flex justify-end gap-2 sticky bottom-4">
         <button type="button" onClick={onCancel} className="btn btn-ghost"><X className="w-4 h-4" />Annuler</button>
