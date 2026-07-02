@@ -1,19 +1,63 @@
-import { Search, X, SlidersHorizontal } from "lucide-react";
+import { Search, X, SlidersHorizontal, Bookmark, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { supabase } from "../../lib/supabaseClient";
+import { useAuth } from "../../hooks/useAuth";
+import { useFeatures } from "../../hooks/useFeatures";
+import { listMySavedSearches, createSavedSearch, deleteSavedSearch } from "../../hooks/useSavedSearches";
 
 const POSTES = ["", "Gardien", "Défenseur", "Milieu", "Attaquant", "Latéral", "Pivot", "Ailier"];
 
 export default function PlayerSearch({ search, setSearch, filters, setFilters }) {
+  const { agent } = useAuth();
+  const { hasFeature } = useFeatures();
+  const hasSavedSearches = hasFeature("mobile_recherche");
   const [open, setOpen] = useState(false);
   const [agents, setAgents] = useState([]);
+  const [saved, setSaved] = useState([]);
+  const [saveName, setSaveName] = useState("");
+  const [showSaveForm, setShowSaveForm] = useState(false);
 
   useEffect(() => {
     supabase.from("agents").select("id, nom, prenom").order("nom").then(({ data }) => setAgents(data ?? []));
   }, []);
 
+  useEffect(() => {
+    if (!hasSavedSearches) return;
+    listMySavedSearches().then(setSaved).catch(() => {});
+  }, [hasSavedSearches]);
+
   function update(k, v) { setFilters({ ...filters, [k]: v || undefined }); }
   function reset() { setFilters({}); setSearch(""); }
+
+  async function saveCurrent(e) {
+    e.preventDefault();
+    if (!saveName.trim()) return toast.error("Nom requis.");
+    try {
+      const created = await createSavedSearch({ agent_id: agent.id, nom: saveName.trim(), search, filters });
+      setSaved((s) => [created, ...s]);
+      setSaveName("");
+      setShowSaveForm(false);
+      toast.success("Filtres enregistrés");
+    } catch (e) {
+      toast.error(e.message);
+    }
+  }
+
+  function applySaved(s) {
+    setSearch(s.search ?? "");
+    setFilters(s.filters ?? {});
+    setOpen(true);
+  }
+
+  async function removeSaved(s) {
+    try {
+      await deleteSavedSearch(s.id);
+      setSaved((ss) => ss.filter((x) => x.id !== s.id));
+    } catch (e) {
+      toast.error(e.message);
+    }
+  }
 
   const active = Object.values(filters).filter(Boolean).length + (search ? 1 : 0);
 
@@ -41,7 +85,30 @@ export default function PlayerSearch({ search, setSearch, filters, setFilters })
         {active > 0 && (
           <button onClick={reset} className="btn btn-ghost text-xs">Réinitialiser</button>
         )}
+        {hasSavedSearches && active > 0 && (
+          <button onClick={() => setShowSaveForm((v) => !v)} className="btn btn-ghost text-xs"><Bookmark className="w-3.5 h-3.5" />Enregistrer</button>
+        )}
       </div>
+
+      {hasSavedSearches && showSaveForm && (
+        <form onSubmit={saveCurrent} className="flex items-center gap-2">
+          <input className="input flex-1" placeholder="Nom de cette recherche…" value={saveName} onChange={(e) => setSaveName(e.target.value)} />
+          <button type="submit" className="btn btn-primary px-3">Enregistrer</button>
+          <button type="button" onClick={() => setShowSaveForm(false)} className="btn btn-ghost px-3">Annuler</button>
+        </form>
+      )}
+
+      {hasSavedSearches && saved.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] uppercase tracking-wider text-ink-muted">Filtres sauvegardés :</span>
+          {saved.map((s) => (
+            <span key={s.id} className="inline-flex items-center gap-1 bg-bg-1 border border-line rounded-full pl-3 pr-1 py-1 text-xs">
+              <button onClick={() => applySaved(s)} className="hover:text-cyan-bright">{s.nom}</button>
+              <button onClick={() => removeSaved(s)} className="p-1 text-ink-muted hover:text-red-300" title="Supprimer"><Trash2 className="w-3 h-3" /></button>
+            </span>
+          ))}
+        </div>
+      )}
 
       {open && (
         <div className="panel p-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
