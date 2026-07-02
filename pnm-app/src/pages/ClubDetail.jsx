@@ -7,28 +7,43 @@ import {
   getClubContacts, getClubActivity, getClubPlayers,
   addClubContact, deleteClubContact, addClubActivity, updateClubActivity,
 } from "../hooks/useClubs";
+import { listNeedsByClub, createNeed, updateNeed, deleteNeed } from "../hooks/useClubNeeds";
 import { useAuth } from "../hooks/useAuth";
+import { useFeatures } from "../hooks/useFeatures";
 import { useConfirm } from "../contexts/ConfirmContext";
 import { formatDateFr } from "../lib/utils";
 import { stepLabel, stepBadgeClass } from "../lib/recruitment";
+import { statutLabel, statutBadgeClass } from "../lib/clubNeeds";
 import { COUNTRIES } from "../lib/countries";
 import AutocompleteInput from "../components/common/AutocompleteInput";
+import ClubNeedForm from "../components/clubs/ClubNeedForm";
 
 const EMPTY_CONTACT = { nom: "", role: "", telephone: "", email: "" };
+const EMPTY_NEED = { poste: "", criteres: [], description: "", statut: "ouvert" };
 
 export default function ClubDetail() {
   const { club: clubParam } = useParams();
   const clubNom = decodeURIComponent(clubParam);
   const nav = useNavigate();
   const { agent, isAdmin, can } = useAuth();
+  const { hasFeature } = useFeatures();
   const confirm = useConfirm();
   const canEdit = isAdmin || can("edit_players");
+  const hasNeeds = hasFeature("placement_besoins_clubs");
 
   const [club, setClub] = useState(null);
   const [contacts, setContacts] = useState([]);
   const [activity, setActivity] = useState([]);
   const [players, setPlayers] = useState([]);
+  const [needs, setNeeds] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [showAddNeed, setShowAddNeed] = useState(false);
+  const [needForm, setNeedForm] = useState(EMPTY_NEED);
+  const [creatingNeed, setCreatingNeed] = useState(false);
+  const [editingNeedId, setEditingNeedId] = useState(null);
+  const [editNeedForm, setEditNeedForm] = useState(EMPTY_NEED);
+  const [savingNeed, setSavingNeed] = useState(false);
 
   const [editingClub, setEditingClub] = useState(false);
   const [clubForm, setClubForm] = useState({ nom: "", pays: "" });
@@ -47,17 +62,18 @@ export default function ClubDetail() {
       if (!c) { toast.error("Club introuvable."); nav("/clubs"); return; }
       setClub(c);
       setClubForm({ nom: c.nom, pays: c.pays || "" });
-      const [contactsData, activityData, playersData] = await Promise.all([
+      const [contactsData, activityData, playersData, needsData] = await Promise.all([
         getClubContacts(c.id), getClubActivity(c.id), getClubPlayers(c.nom),
+        hasNeeds ? listNeedsByClub(c.id) : Promise.resolve([]),
       ]);
-      setContacts(contactsData); setActivity(activityData); setPlayers(playersData);
+      setContacts(contactsData); setActivity(activityData); setPlayers(playersData); setNeeds(needsData);
     } catch (e) {
       toast.error(e.message);
     } finally {
       setLoading(false);
     }
   }
-  useEffect(() => { load(); }, [clubNom]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [clubNom, hasNeeds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function saveClub() {
     if (!clubForm.nom.trim()) return toast.error("Le nom du club est requis.");
@@ -150,6 +166,71 @@ export default function ClubDetail() {
       setActivity((as) => as.map((x) => (x.id === a.id ? updated : x)));
       setEditingNoteId(null);
       toast.success("Note modifiée");
+    } catch (e) {
+      toast.error(e.message);
+    }
+  }
+
+  async function submitCreateNeed(e) {
+    e.preventDefault();
+    setCreatingNeed(true);
+    try {
+      const created = await createNeed({
+        club_id: club.id,
+        poste: needForm.poste.trim() || null,
+        criteres: needForm.criteres,
+        description: needForm.description.trim() || null,
+        statut: needForm.statut,
+        agent_id: agent.id,
+      });
+      setNeeds((ns) => [created, ...ns]);
+      setNeedForm(EMPTY_NEED);
+      setShowAddNeed(false);
+      toast.success("Besoin ajouté");
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setCreatingNeed(false);
+    }
+  }
+
+  function startEditNeed(n) {
+    setEditingNeedId(n.id);
+    setEditNeedForm({ poste: n.poste ?? "", criteres: n.criteres ?? [], description: n.description ?? "", statut: n.statut });
+  }
+
+  async function submitEditNeed(e) {
+    e.preventDefault();
+    setSavingNeed(true);
+    try {
+      const updated = await updateNeed(editingNeedId, {
+        poste: editNeedForm.poste.trim() || null,
+        criteres: editNeedForm.criteres,
+        description: editNeedForm.description.trim() || null,
+        statut: editNeedForm.statut,
+      });
+      setNeeds((ns) => ns.map((n) => (n.id === editingNeedId ? updated : n)));
+      setEditingNeedId(null);
+      toast.success("Besoin mis à jour");
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setSavingNeed(false);
+    }
+  }
+
+  async function removeNeed(n) {
+    const ok = await confirm({
+      title: "Supprimer ce besoin ?",
+      message: n.poste || "Besoin sans poste précisé",
+      confirmLabel: "Supprimer",
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await deleteNeed(n.id);
+      setNeeds((ns) => ns.filter((x) => x.id !== n.id));
+      toast.success("Besoin supprimé");
     } catch (e) {
       toast.error(e.message);
     }
@@ -274,6 +355,75 @@ export default function ClubDetail() {
             ))}
           </ul>
         </div>
+
+        {/* Besoins du club */}
+        {hasNeeds && (
+          <div className="panel p-5 space-y-3 lg:col-span-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm uppercase tracking-wider text-cyan-bright">Besoins du club</h3>
+              {canEdit && !showAddNeed && (
+                <button onClick={() => setShowAddNeed(true)} className="btn btn-outline text-xs px-2 py-1">
+                  <Plus className="w-3.5 h-3.5" />Ajouter un besoin
+                </button>
+              )}
+            </div>
+            {showAddNeed && (
+              <div className="bg-bg-1 border border-line rounded-lg p-3">
+                <ClubNeedForm
+                  form={needForm}
+                  setForm={setNeedForm}
+                  disableClub
+                  submitLabel="Ajouter"
+                  onSubmit={submitCreateNeed}
+                  onCancel={() => { setShowAddNeed(false); setNeedForm(EMPTY_NEED); }}
+                  busy={creatingNeed}
+                />
+              </div>
+            )}
+            {needs.length === 0 && <p className="text-sm text-ink-dim">Aucun besoin enregistré pour ce club.</p>}
+            <ul className="divide-y divide-line">
+              {needs.map((n) => (
+                <li key={n.id} className="py-2.5">
+                  {editingNeedId === n.id ? (
+                    <ClubNeedForm
+                      form={editNeedForm}
+                      setForm={setEditNeedForm}
+                      disableClub
+                      submitLabel="Enregistrer"
+                      onSubmit={submitEditNeed}
+                      onCancel={() => setEditingNeedId(null)}
+                      busy={savingNeed}
+                    />
+                  ) : (
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="min-w-0 space-y-1.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {n.poste && <span className="text-sm font-medium">{n.poste}</span>}
+                          <span className={`badge ${statutBadgeClass(n.statut)}`}>{statutLabel(n.statut)}</span>
+                        </div>
+                        {n.criteres?.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {n.criteres.map((c) => (
+                              <span key={c} className="text-[11px] bg-line/30 border border-line rounded-full px-2 py-0.5 text-ink-dim">{c}</span>
+                            ))}
+                          </div>
+                        )}
+                        {n.description && <p className="text-sm text-ink-dim whitespace-pre-wrap">{n.description}</p>}
+                        <div className="text-[11px] text-ink-muted">{formatDateFr(n.created_at)}</div>
+                      </div>
+                      {canEdit && (
+                        <div className="flex gap-1 shrink-0">
+                          <button onClick={() => startEditNeed(n)} className="btn btn-ghost p-1.5" title="Modifier"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => removeNeed(n)} className="btn btn-ghost p-1.5" title="Supprimer"><Trash2 className="w-3.5 h-3.5 text-red-300" /></button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Joueurs PNM dans ce club */}
         <div className="panel p-5 space-y-3 lg:col-span-2">

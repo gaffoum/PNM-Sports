@@ -26,6 +26,7 @@ export const FEATURES = [
   { key: "placement_contrats",    label: "Gestion avancée des contrats",       pack: "placement_crm" },
   { key: "placement_agenda",      label: "Agenda & rappels",                   pack: "placement_crm" },
   { key: "placement_historique",  label: "Historique d'interactions",          pack: "placement_crm" },
+  { key: "placement_besoins_clubs", label: "Besoins clubs",                     pack: "placement_crm" },
   { key: "comm_emails",           label: "Emails automatiques",                pack: "communication" },
   { key: "comm_notifications",    label: "Notifications in-app",               pack: "communication" },
   { key: "comm_envoi_pdf",        label: "Envoi de fiche PDF par email",       pack: "communication" },

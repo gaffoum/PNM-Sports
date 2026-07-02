@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck, Sparkles, Building2, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck, Sparkles, Building2, ClipboardList, Menu, X } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { useFeatures } from "../../hooks/useFeatures";
 import { isOwner } from "../../lib/ownership";
@@ -41,6 +41,7 @@ function SidebarContent({ agent, isAdmin, hasFeature, onNavigate, onSignOut, goP
         <NavItem to="/players" icon={Users} onClick={onNavigate}>Joueurs</NavItem>
         <NavItem to="/recrutement" icon={LayoutGrid} onClick={onNavigate}>Prospection</NavItem>
         {hasFeature("placement_clubs") && <NavItem to="/clubs" icon={Building2} onClick={onNavigate}>Clubs</NavItem>}
+        {hasFeature("placement_besoins_clubs") && <NavItem to="/besoins-clubs" icon={ClipboardList} onClick={onNavigate}>Besoins clubs</NavItem>}
         <NavItem to="/players/new" icon={UserPlus} onClick={onNavigate}>Ajouter</NavItem>
         {isAdmin && <NavItem to="/agents" icon={ShieldCheck} onClick={onNavigate}>Agents</NavItem>}
         {isOwner(agent) && <NavItem to="/features" icon={Sparkles} onClick={onNavigate}>Briques</NavItem>}

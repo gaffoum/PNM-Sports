@@ -28,6 +28,12 @@ export async function listClubsDirectory() {
   }));
 }
 
+export async function listClubsBasic() {
+  const { data, error } = await supabase.from("clubs").select("id, nom, pays").order("nom");
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function getClubByNom(nom) {
   const { data, error } = await supabase.from("clubs").select("*").eq("nom", nom).maybeSingle();
   if (error) throw error;
