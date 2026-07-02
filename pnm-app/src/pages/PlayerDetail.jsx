@@ -338,7 +338,7 @@ export default function PlayerDetail() {
       <DocumentsList playerId={player.id} documents={docs} onChange={setDocs} />
       {hasScouting && <ScoutingPanel playerId={player.id} evaluations={evaluations} onChange={setEvaluations} />}
       {hasContrats && <ContractsPanel playerId={player.id} contracts={contracts} onChange={setContracts} />}
-      {hasAgenda && <AppointmentsPanel playerId={player.id} appointments={appointments} onChange={setAppointments} />}
+      {hasAgenda && <AppointmentsPanel playerId={player.id} player={player} appointments={appointments} onChange={setAppointments} />}
       {hasHistorique && <InteractionsPanel playerId={player.id} interactions={interactions} onChange={setInteractions} />}
 
       {player.notes && (

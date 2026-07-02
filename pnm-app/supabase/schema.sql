@@ -920,3 +920,40 @@ drop trigger if exists trg_audit_rgpd_requests on public.rgpd_requests;
 create trigger trg_audit_rgpd_requests
   after insert or update or delete on public.rgpd_requests
   for each row execute function public.fn_audit_log();
+
+-- =====================================================================
+-- TABLE: notifications (brique "Notifications in-app")
+-- =====================================================================
+create table if not exists public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  agent_id uuid not null references public.agents(id) on delete cascade,
+  title text not null,
+  message text,
+  link text,
+  read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create index if not exists notifications_agent_id_idx on public.notifications(agent_id);
+
+alter table public.notifications enable row level security;
+
+drop policy if exists "notifications_select" on public.notifications;
+create policy "notifications_select" on public.notifications
+  for select to authenticated
+  using (agent_id = auth.uid());
+
+drop policy if exists "notifications_insert" on public.notifications;
+create policy "notifications_insert" on public.notifications
+  for insert to authenticated
+  with check (agent_id = auth.uid() or public.is_admin());
+
+drop policy if exists "notifications_update" on public.notifications;
+create policy "notifications_update" on public.notifications
+  for update to authenticated
+  using (agent_id = auth.uid())
+  with check (agent_id = auth.uid());
+
+drop policy if exists "notifications_delete" on public.notifications;
+create policy "notifications_delete" on public.notifications
+  for delete to authenticated
+  using (agent_id = auth.uid());

@@ -4,6 +4,7 @@ import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck
 import { useAuth } from "../../hooks/useAuth";
 import { useFeatures } from "../../hooks/useFeatures";
 import { isOwner } from "../../lib/ownership";
+import NotificationBell from "./NotificationBell";
 
 function NavItem({ to, icon: Icon, children, end, onClick }) {
   return (
@@ -33,6 +34,11 @@ function SidebarContent({ agent, isAdmin, hasFeature, onNavigate, onSignOut, goP
           <div className="font-display font-bold text-sm tracking-[0.18em]">PNM SPORTS</div>
           <div className="text-[9px] tracking-[0.3em] text-cyan-bright">ESPACE AGENTS</div>
         </div>
+        {hasFeature("comm_notifications") && (
+          <div className="ml-auto">
+            <NotificationBell />
+          </div>
+        )}
       </div>
 
       {/* Navigation */}
@@ -112,6 +118,11 @@ export default function AppLayout() {
         </button>
         <img src={`${import.meta.env.BASE_URL}logo-pnm.png`} alt="PNM Sports" className="w-7 h-7 rounded object-contain" />
         <span className="font-display font-bold text-sm tracking-[0.18em]">PNM SPORTS</span>
+        {hasFeature("comm_notifications") && (
+          <div className="ml-auto">
+            <NotificationBell />
+          </div>
+        )}
       </header>
 
       {/* Tiroir mobile */}

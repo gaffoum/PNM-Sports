@@ -2,8 +2,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Check, X, CalendarClock, MapPin } from "lucide-react";
 import { createAppointment, updateAppointment, deleteAppointment } from "../../hooks/useAppointments";
+import { createNotification } from "../../hooks/useNotifications";
 import { useAuth } from "../../hooks/useAuth";
 import { useConfirm } from "../../contexts/ConfirmContext";
+import { useFeatures } from "../../hooks/useFeatures";
 import { APPOINTMENT_STATUTS, appointmentStatutLabel, appointmentStatutBadgeClass } from "../../lib/appointments";
 
 const EMPTY = { titre: "", date_rdv: "", lieu: "", notes: "", statut: "a_venir" };
@@ -19,9 +21,10 @@ function formatRdv(iso) {
   return new Date(iso).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-export default function AppointmentsPanel({ playerId, appointments, onChange }) {
+export default function AppointmentsPanel({ playerId, player, appointments, onChange }) {
   const { agent } = useAuth();
   const confirm = useConfirm();
+  const { hasFeature } = useFeatures();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
@@ -46,6 +49,14 @@ export default function AppointmentsPanel({ playerId, appointments, onChange }) 
       setForm(EMPTY);
       setShowAdd(false);
       toast.success("Rendez-vous ajouté");
+      if (hasFeature("comm_notifications") && player?.agent?.id && player.agent.id !== agent.id) {
+        createNotification({
+          agent_id: player.agent.id,
+          title: `Nouveau rendez-vous : ${player.prenom} ${player.nom}`,
+          message: `${created.titre} — ${new Date(created.date_rdv).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`,
+          link: `/players/${playerId}`,
+        }).catch(() => {});
+      }
     } catch (e) {
       toast.error(e.message);
     } finally {
