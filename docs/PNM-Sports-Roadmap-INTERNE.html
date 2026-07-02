@@ -151,9 +151,11 @@
       <tr><td class="feat">Radar de notation réel <span class="ready">✓ Codé — dev</span></td><td>Radar 6 axes du PDF alimenté par de vraies données.</td><td><span class="chip e-mid">Moyen</span></td><td class="days">2,5–5</td><td class="price">1 400 – 2 800 €</td></tr>
       <tr><td class="feat">Scouting / notation interne <span class="ready">✓ Codé — dev</span></td><td>Grille d'évaluation agents, historique, moyennes.</td><td><span class="chip e-high">Élevé</span></td><td class="days">8–15</td><td class="price">4 400 – 8 300 €</td></tr>
       <tr><td class="feat">Comparaison de joueurs <span class="ready">✓ Codé — dev</span></td><td>2–3 joueurs côte à côte (stats, radar, profil).</td><td><span class="chip e-mid">Moyen</span></td><td class="days">3–6</td><td class="price">1 650 – 3 300 €</td></tr>
+      <tr><td class="feat">Assistant IA droit du sport <span class="ready">✓ Codé — dev</span></td><td>Chat juridique (transferts, agents, contrats) basé sur une base documentaire (FIFA, Code du sport, FFF...), réponses sourcées et citées.</td><td><span class="chip e-high">Élevé</span></td><td class="days">10–18</td><td class="price">5 500 – 9 900 €</td></tr>
     </tbody>
   </table>
-  <div class="note"><b>Licence BeSoccer Pro</b> à la charge du client (abonnement éditeur), non incluse — seule évolution de cette section non codée (bloquée par l'accès API tiers).</div>
+  <div class="note"><b>Licence BeSoccer Pro</b> à la charge du client (abonnement éditeur), non incluse — seule évolution non codée de cette section (bloquée par l'accès API tiers).<br/>
+    <b>⚠️ Assistant IA droit du sport — coût récurrent à prévoir :</b> fonctionne via API IA payante à l'usage (Anthropic, avec repli automatique Gemini). Le compte doit être crédité avant mise en service client, et ce coût variable (proportionnel au nombre de questions posées) doit être répercuté dans l'abonnement du client ou suivi en interne — voir section 9 « Maintenance & récurrent ». Tant qu'aucun crédit n'est alimenté, la brique reste développée mais inactive côté client ; l'agence peut aussi réaliser l'import des sources documentaires elle-même pour le compte du client plutôt que de lui laisser la main.</div>
 
   <!-- 2 -->
   <h2 class="sec"><span class="n">2</span> CRM & placement (joueur → club)</h2>
@@ -192,9 +194,11 @@
       <tr><td class="feat">Galerie vidéos / highlights <span class="ready">✓ Codé — dev</span></td><td>Liens / hébergement (YouTube, Veo), lecteur intégré.</td><td><span class="chip e-mid">Moyen</span></td><td class="days">4–8</td><td class="price">2 200 – 4 400 €</td></tr>
       <tr><td class="feat">Signature électronique</td><td>Mandats & contrats (Yousign / DocuSign).</td><td><span class="chip e-high">Élevé</span></td><td class="days">6–11</td><td class="price">3 300 – 6 100 €</td></tr>
       <tr><td class="feat">Book / plaquette joueur <span class="ready">✓ Codé — dev</span></td><td>PDF marketing multi-pages enrichi.</td><td><span class="chip e-mid">Moyen</span></td><td class="days">3,5–6,5</td><td class="price">1 900 – 3 600 €</td></tr>
+      <tr><td class="feat">Générateur de documents <span class="ready">✓ Codé — dev</span></td><td>Mandats & contrats : modèles réutilisables avec variables, formulaire de saisie, paragraphes modifiables, export PDF. Import de documents existants assisté par IA.</td><td><span class="chip e-high">Élevé</span></td><td class="days">9–16</td><td class="price">4 950 – 8 800 €</td></tr>
     </tbody>
   </table>
-  <div class="note"><b>Licence signature électronique</b> (Yousign/DocuSign) à la charge du client, non incluse — seule évolution de cette section non codée.</div>
+  <div class="note"><b>Licence signature électronique</b> (Yousign/DocuSign) à la charge du client, non incluse.<br/>
+    <b>⚠️ Générateur de documents — coût récurrent à prévoir :</b> l'import de documents existants (analyse PDF, extraction des paragraphes) utilise la même API IA payante que l'assistant juridique (Anthropic + repli Gemini). La génération manuelle de documents (sans import IA) ne consomme rien. Même remarque : compte à créditer avant mise en service client, coût à intégrer à l'abonnement ou import réalisé en interne pour le client.</div>
 
   <!-- 5 -->
   <h2 class="sec"><span class="n">5</span> Pilotage & reporting</h2>
@@ -254,9 +258,11 @@
       <tr><td class="feat">MAJ référentiel clubs FFF</td><td>Mise à jour annuelle (1er juillet).</td><td><span class="chip e-low">Annuel</span></td><td class="price" colspan="2">300 – 600 €/an</td></tr>
       <tr><td class="feat">Hébergement & supervision</td><td>Monitoring, backups, montées de version.</td><td><span class="chip e-low">Mensuel</span></td><td class="price" colspan="2">80 – 250 €/mois</td></tr>
       <tr><td class="feat">Sauvegardes & PRA</td><td>Backup + plan de reprise (mise en place).</td><td><span class="chip e-mid">Setup</span></td><td class="price" colspan="2">600 – 1 200 €</td></tr>
+      <tr><td class="feat">Crédits API IA (Anthropic/Gemini)</td><td>Consommation des briques « Assistant IA droit du sport » et « Générateur de documents » (import PDF). Facturé à l'usage par le fournisseur, à provisionner avant activation client.</td><td><span class="chip e-mid">Variable</span></td><td class="price" colspan="2">Usage réel — à refacturer ou inclure au forfait</td></tr>
     </tbody>
   </table>
-  <div class="note"><b>Hors infrastructure :</b> abonnements Vercel / Supabase et licences tierces à la charge du client.</div>
+  <div class="note"><b>Hors infrastructure :</b> abonnements Vercel / Supabase et licences tierces à la charge du client.<br/>
+    <b>Rappel interne (statut au 02/07/2026) :</b> ni le compte Anthropic (crédit épuisé) ni le compte Gemini (quota à 0, facturation projet non liée) ne sont actuellement alimentés. Les deux briques IA sont codées et fonctionnelles mais <b>inactives faute de crédit</b> — à recharger avant toute démo/mise en service client, et à budgéter dans la proposition commerciale (voir aussi note §1 et §4 ci-dessus).</div>
 
   <!-- PACKS -->
   <h2 class="sec"><span class="n">★</span> Packs (tarif bundle, « à partir de »)</h2>
