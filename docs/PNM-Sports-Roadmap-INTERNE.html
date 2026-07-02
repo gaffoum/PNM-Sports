@@ -57,6 +57,9 @@
   .e-low{color:var(--green);border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.1);}
   .e-mid{color:var(--amber);border-color:rgba(251,191,36,.4);background:rgba(251,191,36,.1);}
   .e-high{color:var(--red);border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.1);}
+  .ready{display:inline-block;font-size:9px;padding:2px 7px;border-radius:99px;border:1px solid rgba(52,211,153,.4);
+    background:rgba(52,211,153,.15);color:var(--green);text-transform:uppercase;letter-spacing:.04em;font-weight:700;
+    white-space:nowrap;margin-left:6px;}
   .packs{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:8px;}
   .pack{background:linear-gradient(180deg,rgba(15,59,82,.25),rgba(10,37,64,.4));
     border:1px solid var(--line);border-radius:14px;padding:20px;position:relative;display:flex;flex-direction:column;}
@@ -147,7 +150,7 @@
       <tr><td class="feat">BeSoccer Pro API</td><td>Stats, matchs, valeurs marché auto ; fiches pré-remplies.</td><td><span class="chip e-high">Élevé</span></td><td class="days">7–13</td><td class="price">3 900 – 7 200 €</td></tr>
       <tr><td class="feat">Radar de notation réel</td><td>Radar 6 axes du PDF alimenté par de vraies données.</td><td><span class="chip e-mid">Moyen</span></td><td class="days">2,5–5</td><td class="price">1 400 – 2 800 €</td></tr>
       <tr><td class="feat">Scouting / notation interne</td><td>Grille d'évaluation agents, historique, moyennes.</td><td><span class="chip e-high">Élevé</span></td><td class="days">8–15</td><td class="price">4 400 – 8 300 €</td></tr>
-      <tr><td class="feat">Comparaison de joueurs</td><td>2–3 joueurs côte à côte (stats, radar, profil).</td><td><span class="chip e-mid">Moyen</span></td><td class="days">3–6</td><td class="price">1 650 – 3 300 €</td></tr>
+      <tr><td class="feat">Comparaison de joueurs <span class="ready">✓ Codé — dev</span></td><td>2–3 joueurs côte à côte (stats, radar, profil).</td><td><span class="chip e-mid">Moyen</span></td><td class="days">3–6</td><td class="price">1 650 – 3 300 €</td></tr>
     </tbody>
   </table>
   <div class="note"><b>Licence BeSoccer Pro</b> à la charge du client (abonnement éditeur), non incluse.</div>
@@ -158,7 +161,8 @@
   <table>
     <thead><tr><th>Évolution</th><th>Description</th><th>Effort</th><th>Jours</th><th>Fourchette</th></tr></thead>
     <tbody>
-      <tr><td class="feat">Module clubs / contacts</td><td>Annuaire clubs, dirigeants, contacts, échanges.</td><td><span class="chip e-high">Élevé</span></td><td class="days">7–13</td><td class="price">3 900 – 7 200 €</td></tr>
+      <tr><td class="feat">Module clubs / contacts <span class="ready">✓ Codé — dev</span></td><td>Annuaire clubs, dirigeants, contacts, échanges. Édition/suppression, pays + filtre, auto-complétion.</td><td><span class="chip e-high">Élevé</span></td><td class="days">7–13</td><td class="price">3 900 – 7 200 €</td></tr>
+      <tr><td class="feat">Besoins clubs <span class="ready">✓ Codé — dev</span></td><td>Centralise les demandes de recrutement des clubs (poste, critères, statut) — synchronisé avec la fiche club.</td><td><span class="chip e-mid">Moyen</span></td><td class="days">4–7</td><td class="price">2 200 – 3 900 €</td></tr>
       <tr><td class="feat">Pipeline transferts & mandats</td><td><b>Distinct de la prospection</b> : deals joueur↔club, offres, mercato, statut.</td><td><span class="chip e-high">Élevé</span></td><td class="days">8–15</td><td class="price">4 400 – 8 300 €</td></tr>
       <tr><td class="feat">Commissions & revenus</td><td>Commissions par deal, échéances, revenu prévisionnel agence.</td><td><span class="chip e-mid">Moyen</span></td><td class="days">5–9</td><td class="price">2 800 – 5 000 €</td></tr>
       <tr><td class="feat">Gestion des contrats joueurs</td><td>Au-delà de <code>fin_contrat</code> : clauses, renouvellements, alertes, docs.</td><td><span class="chip e-mid">Moyen</span></td><td class="days">5–9</td><td class="price">2 800 – 5 000 €</td></tr>
@@ -166,7 +170,8 @@
       <tr><td class="feat">Historique d'interactions</td><td>Journal d'appels / mails / notes par joueur.</td><td><span class="chip e-mid">Moyen</span></td><td class="days">3–6</td><td class="price">1 650 – 3 300 €</td></tr>
     </tbody>
   </table>
-  <div class="note"><b>Déjà livré (non facturable) :</b> tunnel de <b>prospection</b> (acquisition du joueur) + suivi basique des fins de contrat.</div>
+  <div class="note"><b>Déjà livré (non facturable) :</b> tunnel de <b>prospection</b> (acquisition du joueur) + suivi basique des fins de contrat.
+    <b>Codé en dev :</b> module clubs/contacts et besoins clubs sont développés et testés — activables immédiatement après validation du devis, sans délai de développement supplémentaire (système de briques : bascule instantanée, sans interruption de service).</div>
 
   <!-- 3 -->
   <h2 class="sec"><span class="n">3</span> Communication & notifications</h2>
@@ -175,7 +180,7 @@
     <tbody>
       <tr><td class="feat">Emails transactionnels</td><td>Invitations, alertes fin de contrat, résumés hebdo (Resend).</td><td><span class="chip e-mid">Moyen</span></td><td class="days">3–6</td><td class="price">1 650 – 3 300 €</td></tr>
       <tr><td class="feat">Notifications in-app / push</td><td>Centre de notifications (prospect, étape franchie…).</td><td><span class="chip e-mid">Moyen</span></td><td class="days">4–7</td><td class="price">2 200 – 3 900 €</td></tr>
-      <tr><td class="feat">Envoi de fiche PDF par email</td><td>Transmettre une fiche joueur à un club en un clic.</td><td><span class="chip e-low">Faible</span></td><td class="days">1–2,5</td><td class="price">600 – 1 400 €</td></tr>
+      <tr><td class="feat">Envoi de fiche PDF par email <span class="ready">✓ Codé — dev</span></td><td>Transmettre une fiche joueur à un club en un clic. (Nécessite domaine vérifié sur Resend.)</td><td><span class="chip e-low">Faible</span></td><td class="days">1–2,5</td><td class="price">600 – 1 400 €</td></tr>
     </tbody>
   </table>
 
@@ -266,8 +271,8 @@
       <ul><li>BeSoccer Pro API</li><li>Radar de notation réel</li><li>Comparaison de joueurs</li><li>(option) Scouting interne</li></ul>
       <div class="from">À partir de</div><div class="amount">6 900 € HT</div><span class="save">hors licence API</span></div>
     <div class="pack"><h3>Placement & CRM</h3><div class="tag">Phase aval · cœur du métier</div>
-      <ul><li>Module clubs / contacts</li><li>Pipeline transferts & mandats</li><li>Commissions & revenus</li><li>Agenda + historique</li></ul>
-      <div class="from">À partir de</div><div class="amount">12 900 € HT</div></div>
+      <ul><li>Module clubs / contacts <span class="ready">✓ dev</span></li><li>Besoins clubs <span class="ready">✓ dev</span></li><li>Pipeline transferts & mandats</li><li>Commissions & revenus</li><li>Agenda + historique</li></ul>
+      <div class="from">À partir de</div><div class="amount">14 900 € HT</div></div>
     <div class="pack"><h3>Sécurité & Conformité</h3><div class="tag">Confiance & RGPD</div>
       <ul><li>Permissions fines</li><li>Journal d'audit</li><li>Authentification 2FA</li><li>RGPD avancé</li></ul>
       <div class="from">À partir de</div><div class="amount">6 400 € HT</div></div>
@@ -281,8 +286,8 @@
   <div class="road">
     <div class="phase"><div class="ph-head"><h4>Phase 1 — Fondations & quick wins</h4><span class="when">Mois 0–2</span><span class="prio p1">Priorité haute</span><span class="pp">≈ 3 700 – 7 600 €</span></div>
       <p>Domaine, SEO & analytics, emails transactionnels, envoi PDF email, MAJ FFF. Résultats visibles tôt, faible risque.</p></div>
-    <div class="phase"><div class="ph-head"><h4>Phase 2 — Placement & CRM (aval prospection)</h4><span class="when">Mois 2–4</span><span class="prio p1">Priorité haute</span><span class="pp">≈ 13 000 – 24 000 €</span></div>
-      <p>Clubs / contacts, pipeline transferts & mandats, commissions & revenus, agenda. La plateforme devient l'outil quotidien + suivi du CA.</p></div>
+    <div class="phase"><div class="ph-head"><h4>Phase 2 — Placement & CRM (aval prospection)</h4><span class="when">Mois 2–4</span><span class="prio p1">Priorité haute</span><span class="pp">≈ 15 000 – 28 000 €</span></div>
+      <p>Clubs / contacts <span class="ready">✓ dev</span>, besoins clubs <span class="ready">✓ dev</span>, pipeline transferts & mandats, commissions & revenus, agenda. La plateforme devient l'outil quotidien + suivi du CA.</p></div>
     <div class="phase"><div class="ph-head"><h4>Phase 3 — Data & scouting</h4><span class="when">Mois 4–7</span><span class="prio p2">Priorité moyenne</span><span class="pp">≈ 11 000 – 22 000 €</span></div>
       <p>BeSoccer Pro, radar réel, scouting interne, comparaison. Différenciateur fort (dépend de la licence API).</p></div>
     <div class="phase"><div class="ph-head"><h4>Phase 4 — Pilotage & sécurité</h4><span class="when">Mois 7–9</span><span class="prio p2">Priorité moyenne</span><span class="pp">≈ 10 000 – 19 000 €</span></div>
@@ -292,15 +297,16 @@
   </div>
 
   <div class="totals">
-    <div class="tot"><div class="lbl">Programme complet (12 mois)</div><div class="val">≈ 50 – 95 k€ HT</div></div>
-    <div class="tot"><div class="lbl">Socle prioritaire (Ph. 1+2)</div><div class="val">≈ 17 – 32 k€ HT</div></div>
+    <div class="tot"><div class="lbl">Programme complet (12 mois)</div><div class="val">≈ 52 – 99 k€ HT</div></div>
+    <div class="tot"><div class="lbl">Socle prioritaire (Ph. 1+2)</div><div class="val">≈ 19 – 36 k€ HT</div></div>
     <div class="tot"><div class="lbl">Récurrent (maintenance)</div><div class="val">≈ 230 – 850 €/mois</div></div>
   </div>
 
   <div class="note"><b>Rappel interne :</b> tous les montants sont au tarif préférentiel <b>550 €/j</b> (standard 750–800 €/j).
-    Marge de négociation : remonter vers le standard si le périmètre se complexifie. Prix HT, hors licences tierces & hébergement.</div>
+    Marge de négociation : remonter vers le standard si le périmètre se complexifie. Prix HT, hors licences tierces & hébergement.
+    Les items marqués <span class="ready">✓ Codé — dev</span> sont développés et testés en environnement de dev — activables sans délai dès validation du devis.</div>
 
-  <footer><span>PNM Sports — Roadmap & chiffrage (INTERNE)</span><span>Confidentiel · 30/06/2026 · v2</span></footer>
+  <footer><span>PNM Sports — Roadmap & chiffrage (INTERNE)</span><span>Confidentiel · 30/06/2026 · v3</span></footer>
 </div>
 </body>
 </html>

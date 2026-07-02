@@ -76,6 +76,9 @@
   .pack .amount{font-family:'Sora';font-weight:800;font-size:26px;color:var(--ink);}
   .ribbon{position:absolute;top:14px;right:14px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
     background:var(--cyan);color:#04101f;padding:3px 8px;border-radius:99px;font-weight:700;}
+  .ready{display:inline-block;font-size:9px;padding:2px 7px;border-radius:99px;border:1px solid rgba(52,211,153,.4);
+    background:rgba(52,211,153,.15);color:var(--green);text-transform:uppercase;letter-spacing:.04em;font-weight:700;
+    white-space:nowrap;margin-left:6px;}
 
   .road{position:relative;margin-top:14px;padding-left:26px;}
   .road:before{content:"";position:absolute;left:7px;top:6px;bottom:6px;width:2px;
@@ -172,6 +175,8 @@
       <li>Suivi des fins de contrat (alerte &lt; 6 mois)</li>
     </ul>
   </div>
+  <p class="sec-desc">Les évolutions marquées <span class="ready">✓ Développé</span> ci-dessous sont déjà codées et testées :
+    activation <b>immédiate</b> dès validation du devis, sans délai de développement ni interruption de service.</p>
   <p class="sec-desc">Les évolutions ci-dessous viennent enrichir cette base. Prix fermes « à partir de », en euros HT.</p>
 
   <!-- 1 -->
@@ -183,7 +188,7 @@
       <tr><td class="feat">Connexion BeSoccer Pro</td><td>Stats, matchs et valeurs marché récupérés automatiquement — fini la saisie manuelle.</td><td class="price">3 900 €<small>à partir de</small></td></tr>
       <tr><td class="feat">Radar de notation</td><td>Profil visuel 6 axes alimenté par de vraies données dans vos fiches PDF.</td><td class="price">1 400 €<small>à partir de</small></td></tr>
       <tr><td class="feat">Scouting interne</td><td>Vos agents notent les joueurs selon votre propre grille ; historique et moyennes.</td><td class="price">4 400 €<small>à partir de</small></td></tr>
-      <tr><td class="feat">Comparaison de joueurs</td><td>Mettre plusieurs joueurs côte à côte pour décider et convaincre.</td><td class="price">1 650 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Comparaison de joueurs <span class="ready">✓ Développé</span></td><td>Mettre plusieurs joueurs côte à côte pour décider et convaincre.</td><td class="price">1 650 €<small>à partir de</small></td></tr>
     </tbody>
   </table>
 
@@ -193,7 +198,8 @@
   <table>
     <thead><tr><th>Évolution</th><th>Bénéfice</th><th>Prix</th></tr></thead>
     <tbody>
-      <tr><td class="feat">Annuaire clubs & contacts</td><td>Tous vos interlocuteurs clubs et dirigeants centralisés, avec l'historique des échanges.</td><td class="price">3 900 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Annuaire clubs & contacts <span class="ready">✓ Développé</span></td><td>Tous vos interlocuteurs clubs et dirigeants centralisés, avec l'historique des échanges.</td><td class="price">3 900 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Besoins clubs <span class="ready">✓ Développé</span></td><td>Centralisez les demandes de recrutement de vos clubs (poste, critères recherchés, statut), visibles aussi sur la fiche de chaque club.</td><td class="price">2 200 €<small>à partir de</small></td></tr>
       <tr><td class="feat">Pipeline transferts & mandats</td><td>Suivez chaque deal joueur↔club : offres reçues, conditions, fenêtres de mercato, statut.</td><td class="price">4 400 €<small>à partir de</small></td></tr>
       <tr><td class="feat">Commissions & revenus</td><td>Pilotez vos commissions par deal, vos échéances et votre revenu prévisionnel.</td><td class="price">2 800 €<small>à partir de</small></td></tr>
       <tr><td class="feat">Gestion des contrats</td><td>Clauses, renouvellements, alertes et documents liés à chaque joueur.</td><td class="price">2 800 €<small>à partir de</small></td></tr>
@@ -209,7 +215,7 @@
     <tbody>
       <tr><td class="feat">Emails automatiques</td><td>Invitations, alertes fin de contrat, résumés hebdomadaires envoyés automatiquement.</td><td class="price">1 650 €<small>à partir de</small></td></tr>
       <tr><td class="feat">Notifications dans l'app</td><td>Vos agents alertés en temps réel (nouveau prospect, étape franchie…).</td><td class="price">2 200 €<small>à partir de</small></td></tr>
-      <tr><td class="feat">Envoi de fiche par email</td><td>Transmettre une fiche joueur PDF à un club en un clic.</td><td class="price">600 €<small>à partir de</small></td></tr>
+      <tr><td class="feat">Envoi de fiche par email <span class="ready">✓ Développé</span></td><td>Transmettre une fiche joueur PDF à un club en un clic.</td><td class="price">600 €<small>à partir de</small></td></tr>
     </tbody>
   </table>
 
@@ -290,8 +296,8 @@
       <div class="from">À partir de</div><div class="amount">6 900 € HT</div></div>
 
     <div class="pack"><h3>Pack Placement & CRM</h3><div class="tag">Le cœur de votre métier</div>
-      <ul><li>Annuaire clubs & contacts</li><li>Pipeline transferts & mandats</li><li>Commissions & revenus</li><li>Agenda + historique</li></ul>
-      <div class="from">À partir de</div><div class="amount">12 900 € HT</div></div>
+      <ul><li>Annuaire clubs & contacts <span class="ready">✓</span></li><li>Besoins clubs <span class="ready">✓</span></li><li>Pipeline transferts & mandats</li><li>Commissions & revenus</li><li>Agenda + historique</li></ul>
+      <div class="from">À partir de</div><div class="amount">14 900 € HT</div></div>
 
     <div class="pack"><h3>Pack Sécurité & Conformité</h3><div class="tag">Confiance & RGPD</div>
       <ul><li>Droits avancés par module</li><li>Journal d'audit</li><li>Double authentification</li><li>Conformité RGPD avancée</li></ul>
@@ -308,8 +314,8 @@
   <div class="road">
     <div class="phase"><div class="ph-head"><h4>Étape 1 — Fondations & gains rapides</h4><span class="when">Mois 0–2</span><span class="prio p1">Prioritaire</span><span class="pp">dès 3 700 €</span></div>
       <p>Domaine personnalisé, référencement, emails automatiques, envoi de fiches. Des bénéfices visibles dès les premières semaines.</p></div>
-    <div class="phase"><div class="ph-head"><h4>Étape 2 — Placement & chiffre d'affaires</h4><span class="when">Mois 2–4</span><span class="prio p1">Prioritaire</span><span class="pp">dès 13 000 €</span></div>
-      <p>Annuaire clubs, pipeline transferts & mandats, commissions, agenda. La plateforme devient votre outil quotidien et suit vos revenus.</p></div>
+    <div class="phase"><div class="ph-head"><h4>Étape 2 — Placement & chiffre d'affaires</h4><span class="when">Mois 2–4</span><span class="prio p1">Prioritaire</span><span class="pp">dès 15 000 €</span></div>
+      <p>Annuaire clubs <span class="ready">✓</span>, besoins clubs <span class="ready">✓</span>, pipeline transferts & mandats, commissions, agenda. La plateforme devient votre outil quotidien et suit vos revenus.</p></div>
     <div class="phase"><div class="ph-head"><h4>Étape 3 — Data & scouting</h4><span class="when">Mois 4–7</span><span class="prio p2">Conseillé</span><span class="pp">dès 11 000 €</span></div>
       <p>Connexion BeSoccer, radar de notation, scouting interne, comparaison. Vous vous démarquez auprès des clubs et des joueurs.</p></div>
     <div class="phase"><div class="ph-head"><h4>Étape 4 — Pilotage & sécurité</h4><span class="when">Mois 7–9</span><span class="prio p2">Conseillé</span><span class="pp">dès 10 000 €</span></div>
@@ -319,8 +325,8 @@
   </div>
 
   <div class="totals">
-    <div class="tot"><div class="lbl">Pour démarrer (Étapes 1+2)</div><div class="val">dès 17 000 € HT</div></div>
-    <div class="tot"><div class="lbl">Programme complet (12 mois)</div><div class="val">dès 50 000 € HT</div></div>
+    <div class="tot"><div class="lbl">Pour démarrer (Étapes 1+2)</div><div class="val">dès 19 000 € HT</div></div>
+    <div class="tot"><div class="lbl">Programme complet (12 mois)</div><div class="val">dès 52 000 € HT</div></div>
     <div class="tot"><div class="lbl">Accompagnement mensuel</div><div class="val">dès 230 € / mois</div></div>
   </div>
 
