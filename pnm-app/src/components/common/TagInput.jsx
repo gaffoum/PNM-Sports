@@ -65,7 +65,7 @@ export default function TagInput({ value = [], onChange, suggestions = [], place
         />
       </div>
       {open && matches.length > 0 && (
-        <ul className="absolute z-50 mt-1 w-full max-h-56 overflow-y-auto panel border border-line-strong shadow-2xl py-1">
+        <ul className="absolute z-50 mt-1 w-full max-h-56 overflow-y-auto bg-panel rounded-card border border-line-strong shadow-2xl py-1">
           {matches.map((s) => (
             <li key={s}>
               <button
