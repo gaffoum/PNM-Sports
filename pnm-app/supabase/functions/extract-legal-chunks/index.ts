@@ -72,7 +72,7 @@ async function callAnthropic(system: string, text: string, pdfBase64: string, ma
 }
 
 async function callGemini(system: string, text: string, pdfBase64: string, maxTokens: number, apiKey: string, timeoutMs: number): Promise<string> {
-  const model = "gemini-2.0-flash";
+  const model = "gemini-1.5-flash";
   let res: Response;
   try {
     res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
