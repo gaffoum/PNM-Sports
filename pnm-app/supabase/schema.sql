@@ -37,6 +37,7 @@ create table if not exists public.agents (
   role public.agent_role not null default 'agent',
   permissions jsonb not null default '{}'::jsonb,
   actif boolean not null default true,
+  langue text not null default 'fr' check (langue in ('fr', 'en')),
   created_at timestamptz not null default now()
 );
 
@@ -68,6 +69,7 @@ create table if not exists public.players (
   notes text,
   consentement_rgpd boolean not null default false,
   consentement_rgpd_date timestamptz,
+  vitrine_public boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -176,6 +178,17 @@ as $$
   );
 $$;
 
+-- Compte "SuperAdmin" (proprietaire de l'agence) : au-dessus du role admin,
+-- seul habilite a piloter les briques commerciales (/features).
+create or replace function public.is_owner() returns boolean
+language sql security definer stable
+as $$
+  select exists (
+    select 1 from public.agents
+    where id = auth.uid() and lower(email) = 'gaffoum@gmail.com'
+  );
+$$;
+
 -- =====================================================================
 -- RLS
 -- =====================================================================
@@ -203,6 +216,25 @@ drop policy if exists "agents_protect_owner_delete" on public.agents;
 create policy "agents_protect_owner_delete" on public.agents
   as restrictive for delete to authenticated
   using (lower(email) <> 'gaffoum@gmail.com' or id = auth.uid());
+
+-- Preference de langue : fonction dediee (plutot qu'une policy
+-- self-update sur toute la ligne, qui laisserait un agent modifier
+-- son propre role/permissions).
+create or replace function public.update_my_langue(p_langue text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_langue not in ('fr', 'en') then
+    raise exception 'Langue invalide : %', p_langue;
+  end if;
+  update public.agents set langue = p_langue where id = auth.uid();
+end;
+$$;
+
+grant execute on function public.update_my_langue(text) to authenticated;
 
 -- players :
 --   - admin : tout
@@ -307,6 +339,420 @@ create policy "activity_log_insert" on public.activity_log
   with check (public.is_agent() and agent_id = auth.uid());
 
 -- =====================================================================
+-- TABLES: clubs / club_contacts / club_activity (brique "Annuaire clubs & contacts")
+-- clubs = entite maitresse (nom unique, pays), editable/supprimable.
+-- =====================================================================
+create table if not exists public.clubs (
+  id uuid primary key default gen_random_uuid(),
+  nom text not null unique,
+  pays text,
+  created_by uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists clubs_pays_idx on public.clubs(pays);
+
+drop trigger if exists clubs_set_updated_at on public.clubs;
+create trigger clubs_set_updated_at
+before update on public.clubs
+for each row execute function public.set_updated_at();
+
+alter table public.clubs enable row level security;
+
+drop policy if exists "clubs_select" on public.clubs;
+create policy "clubs_select" on public.clubs
+  for select to authenticated using (public.is_agent());
+
+drop policy if exists "clubs_write" on public.clubs;
+create policy "clubs_write" on public.clubs
+  for all to authenticated
+  using (public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_clubs'))
+  with check (public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_clubs'));
+
+create table if not exists public.club_contacts (
+  id uuid primary key default gen_random_uuid(),
+  club_id uuid not null references public.clubs(id) on delete cascade,
+  nom text not null,
+  role text,
+  telephone text,
+  email text,
+  created_by uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create index if not exists club_contacts_club_id_idx on public.club_contacts(club_id);
+
+create table if not exists public.club_activity (
+  id uuid primary key default gen_random_uuid(),
+  club_id uuid not null references public.clubs(id) on delete cascade,
+  note text not null,
+  agent_id uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz
+);
+create index if not exists club_activity_club_id_idx on public.club_activity(club_id);
+create index if not exists club_activity_created_at_idx on public.club_activity(created_at desc);
+
+alter table public.club_contacts enable row level security;
+alter table public.club_activity enable row level security;
+
+drop policy if exists "club_contacts_select" on public.club_contacts;
+create policy "club_contacts_select" on public.club_contacts
+  for select to authenticated using (public.is_agent());
+
+drop policy if exists "club_contacts_write" on public.club_contacts;
+create policy "club_contacts_write" on public.club_contacts
+  for all to authenticated
+  using (public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_clubs'))
+  with check (public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_clubs'));
+
+drop policy if exists "club_activity_select" on public.club_activity;
+create policy "club_activity_select" on public.club_activity
+  for select to authenticated using (public.is_agent());
+
+drop policy if exists "club_activity_write" on public.club_activity;
+create policy "club_activity_write" on public.club_activity
+  for all to authenticated
+  using (public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_clubs'))
+  with check (public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_clubs'));
+
+-- =====================================================================
+-- TABLE: club_needs (brique "Besoins clubs") — demandes de recrutement
+-- exprimees par les clubs (poste, criteres, description, statut).
+-- =====================================================================
+create table if not exists public.club_needs (
+  id uuid primary key default gen_random_uuid(),
+  club_id uuid not null references public.clubs(id) on delete cascade,
+  poste text,
+  criteres text[] not null default '{}',
+  description text,
+  statut text not null default 'ouvert' check (statut in ('ouvert', 'pourvu', 'annule')),
+  agent_id uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists club_needs_club_id_idx on public.club_needs(club_id);
+create index if not exists club_needs_statut_idx on public.club_needs(statut);
+
+drop trigger if exists club_needs_set_updated_at on public.club_needs;
+create trigger club_needs_set_updated_at
+before update on public.club_needs
+for each row execute function public.set_updated_at();
+
+alter table public.club_needs enable row level security;
+
+drop policy if exists "club_needs_select" on public.club_needs;
+create policy "club_needs_select" on public.club_needs
+  for select to authenticated using (public.is_agent());
+
+drop policy if exists "club_needs_write" on public.club_needs;
+create policy "club_needs_write" on public.club_needs
+  for all to authenticated
+  using (public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_clubs'))
+  with check (public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_clubs'));
+
+-- =====================================================================
+-- TABLE: player_interactions (brique "Historique d'interactions")
+-- =====================================================================
+create table if not exists public.player_interactions (
+  id uuid primary key default gen_random_uuid(),
+  player_id uuid not null references public.players(id) on delete cascade,
+  type text not null default 'note' check (type in ('appel', 'email', 'reunion', 'note')),
+  note text not null,
+  agent_id uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz
+);
+create index if not exists player_interactions_player_id_idx on public.player_interactions(player_id);
+create index if not exists player_interactions_created_at_idx on public.player_interactions(created_at desc);
+
+alter table public.player_interactions enable row level security;
+
+drop policy if exists "player_interactions_select" on public.player_interactions;
+create policy "player_interactions_select" on public.player_interactions
+  for select to authenticated
+  using (
+    public.has_perm('view_all_players') or exists (
+      select 1 from public.players p
+      where p.id = player_interactions.player_id
+      and (public.is_admin() or p.agent_referent = auth.uid())
+    )
+  );
+
+drop policy if exists "player_interactions_write" on public.player_interactions;
+create policy "player_interactions_write" on public.player_interactions
+  for all to authenticated
+  using (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_agenda') or exists (
+      select 1 from public.players p
+      where p.id = player_interactions.player_id and p.agent_referent = auth.uid()
+    )
+  )
+  with check (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_agenda') or exists (
+      select 1 from public.players p
+      where p.id = player_interactions.player_id and p.agent_referent = auth.uid()
+    )
+  );
+
+-- =====================================================================
+-- TABLE: appointments (brique "Agenda & rappels")
+-- =====================================================================
+create table if not exists public.appointments (
+  id uuid primary key default gen_random_uuid(),
+  player_id uuid not null references public.players(id) on delete cascade,
+  titre text not null,
+  date_rdv timestamptz not null,
+  lieu text,
+  notes text,
+  statut text not null default 'a_venir' check (statut in ('a_venir', 'fait', 'annule')),
+  agent_id uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists appointments_player_id_idx on public.appointments(player_id);
+create index if not exists appointments_date_rdv_idx on public.appointments(date_rdv);
+
+drop trigger if exists appointments_set_updated_at on public.appointments;
+create trigger appointments_set_updated_at
+before update on public.appointments
+for each row execute function public.set_updated_at();
+
+alter table public.appointments enable row level security;
+
+drop policy if exists "appointments_select" on public.appointments;
+create policy "appointments_select" on public.appointments
+  for select to authenticated
+  using (
+    public.has_perm('view_all_players') or exists (
+      select 1 from public.players p
+      where p.id = appointments.player_id
+      and (public.is_admin() or p.agent_referent = auth.uid())
+    )
+  );
+
+drop policy if exists "appointments_write" on public.appointments;
+create policy "appointments_write" on public.appointments
+  for all to authenticated
+  using (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_agenda') or exists (
+      select 1 from public.players p
+      where p.id = appointments.player_id and p.agent_referent = auth.uid()
+    )
+  )
+  with check (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_agenda') or exists (
+      select 1 from public.players p
+      where p.id = appointments.player_id and p.agent_referent = auth.uid()
+    )
+  );
+
+-- =====================================================================
+-- TABLE: player_deals (brique "Pipeline transferts & mandats")
+-- =====================================================================
+create table if not exists public.player_deals (
+  id uuid primary key default gen_random_uuid(),
+  player_id uuid not null references public.players(id) on delete cascade,
+  club_id uuid not null references public.clubs(id) on delete cascade,
+  type text not null default 'transfert' check (type in ('transfert', 'pret', 'essai')),
+  statut text not null default 'en_discussion'
+    check (statut in ('en_discussion', 'offre_recue', 'accord_verbal', 'signe', 'refuse', 'abandonne')),
+  montant_propose numeric(12,2),
+  notes text,
+  agent_id uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists player_deals_player_id_idx on public.player_deals(player_id);
+create index if not exists player_deals_club_id_idx on public.player_deals(club_id);
+create index if not exists player_deals_statut_idx on public.player_deals(statut);
+
+drop trigger if exists player_deals_set_updated_at on public.player_deals;
+create trigger player_deals_set_updated_at
+before update on public.player_deals
+for each row execute function public.set_updated_at();
+
+alter table public.player_deals enable row level security;
+
+drop policy if exists "player_deals_select" on public.player_deals;
+create policy "player_deals_select" on public.player_deals
+  for select to authenticated
+  using (
+    public.has_perm('view_all_players') or exists (
+      select 1 from public.players p
+      where p.id = player_deals.player_id
+      and (public.is_admin() or p.agent_referent = auth.uid())
+    )
+  );
+
+drop policy if exists "player_deals_write" on public.player_deals;
+create policy "player_deals_write" on public.player_deals
+  for all to authenticated
+  using (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_pipeline') or exists (
+      select 1 from public.players p
+      where p.id = player_deals.player_id and p.agent_referent = auth.uid()
+    )
+  )
+  with check (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_pipeline') or exists (
+      select 1 from public.players p
+      where p.id = player_deals.player_id and p.agent_referent = auth.uid()
+    )
+  );
+
+-- =====================================================================
+-- TABLE: deal_commissions (brique "Commissions & revenus")
+-- =====================================================================
+create table if not exists public.deal_commissions (
+  id uuid primary key default gen_random_uuid(),
+  deal_id uuid not null references public.player_deals(id) on delete cascade,
+  montant numeric(12,2) not null,
+  statut text not null default 'attendue' check (statut in ('attendue', 'facturee', 'encaissee')),
+  date_echeance date,
+  notes text,
+  agent_id uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists deal_commissions_deal_id_idx on public.deal_commissions(deal_id);
+
+drop trigger if exists deal_commissions_set_updated_at on public.deal_commissions;
+create trigger deal_commissions_set_updated_at
+before update on public.deal_commissions
+for each row execute function public.set_updated_at();
+
+alter table public.deal_commissions enable row level security;
+
+drop policy if exists "deal_commissions_select" on public.deal_commissions;
+create policy "deal_commissions_select" on public.deal_commissions
+  for select to authenticated
+  using (
+    public.has_perm('view_all_players') or exists (
+      select 1 from public.player_deals d join public.players p on p.id = d.player_id
+      where d.id = deal_commissions.deal_id
+      and (public.is_admin() or p.agent_referent = auth.uid())
+    )
+  );
+
+drop policy if exists "deal_commissions_write" on public.deal_commissions;
+create policy "deal_commissions_write" on public.deal_commissions
+  for all to authenticated
+  using (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_pipeline') or exists (
+      select 1 from public.player_deals d join public.players p on p.id = d.player_id
+      where d.id = deal_commissions.deal_id and p.agent_referent = auth.uid()
+    )
+  )
+  with check (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_pipeline') or exists (
+      select 1 from public.player_deals d join public.players p on p.id = d.player_id
+      where d.id = deal_commissions.deal_id and p.agent_referent = auth.uid()
+    )
+  );
+
+-- =====================================================================
+-- TABLE: player_contracts (brique "Gestion des contrats joueurs")
+-- =====================================================================
+create table if not exists public.player_contracts (
+  id uuid primary key default gen_random_uuid(),
+  player_id uuid not null references public.players(id) on delete cascade,
+  club_id uuid references public.clubs(id) on delete set null,
+  date_debut date,
+  date_fin date,
+  salaire_annuel numeric(12,2),
+  clause_liberatoire text,
+  notes text,
+  agent_id uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists player_contracts_player_id_idx on public.player_contracts(player_id);
+
+drop trigger if exists player_contracts_set_updated_at on public.player_contracts;
+create trigger player_contracts_set_updated_at
+before update on public.player_contracts
+for each row execute function public.set_updated_at();
+
+alter table public.player_contracts enable row level security;
+
+drop policy if exists "player_contracts_select" on public.player_contracts;
+create policy "player_contracts_select" on public.player_contracts
+  for select to authenticated
+  using (
+    public.has_perm('view_all_players') or exists (
+      select 1 from public.players p
+      where p.id = player_contracts.player_id
+      and (public.is_admin() or p.agent_referent = auth.uid())
+    )
+  );
+
+drop policy if exists "player_contracts_write" on public.player_contracts;
+create policy "player_contracts_write" on public.player_contracts
+  for all to authenticated
+  using (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_scouting') or exists (
+      select 1 from public.players p
+      where p.id = player_contracts.player_id and p.agent_referent = auth.uid()
+    )
+  )
+  with check (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_scouting') or exists (
+      select 1 from public.players p
+      where p.id = player_contracts.player_id and p.agent_referent = auth.uid()
+    )
+  );
+
+-- =====================================================================
+-- TABLE: player_evaluations (brique "Scouting interne" / alimente
+-- "Radar de notation réel")
+-- =====================================================================
+create table if not exists public.player_evaluations (
+  id uuid primary key default gen_random_uuid(),
+  player_id uuid not null references public.players(id) on delete cascade,
+  agent_id uuid references public.agents(id) on delete set null,
+  date_evaluation date not null default current_date,
+  vitesse smallint check (vitesse between 1 and 10),
+  technique smallint check (technique between 1 and 10),
+  physique smallint check (physique between 1 and 10),
+  mental smallint check (mental between 1 and 10),
+  tactique smallint check (tactique between 1 and 10),
+  passes smallint check (passes between 1 and 10),
+  notes text,
+  created_at timestamptz not null default now()
+);
+create index if not exists player_evaluations_player_id_idx on public.player_evaluations(player_id);
+create index if not exists player_evaluations_date_idx on public.player_evaluations(date_evaluation desc);
+
+alter table public.player_evaluations enable row level security;
+
+drop policy if exists "player_evaluations_select" on public.player_evaluations;
+create policy "player_evaluations_select" on public.player_evaluations
+  for select to authenticated
+  using (
+    public.has_perm('view_all_players') or exists (
+      select 1 from public.players p
+      where p.id = player_evaluations.player_id
+      and (public.is_admin() or p.agent_referent = auth.uid())
+    )
+  );
+
+drop policy if exists "player_evaluations_write" on public.player_evaluations;
+create policy "player_evaluations_write" on public.player_evaluations
+  for all to authenticated
+  using (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_scouting') or exists (
+      select 1 from public.players p
+      where p.id = player_evaluations.player_id and p.agent_referent = auth.uid()
+    )
+  )
+  with check (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_scouting') or exists (
+      select 1 from public.players p
+      where p.id = player_evaluations.player_id and p.agent_referent = auth.uid()
+    )
+  );
+
+-- =====================================================================
 -- STORAGE policies (les buckets sont crees via API par scripts/setup.mjs)
 -- =====================================================================
 -- player-photos : public en lecture, ecriture par agents
@@ -350,3 +796,546 @@ drop policy if exists "player_documents_agent_delete" on storage.objects;
 create policy "player_documents_agent_delete" on storage.objects
   for delete to authenticated
   using (bucket_id = 'player-documents' and public.is_agent());
+
+-- =====================================================================
+-- TABLE: features (système de "briques" — feature flags facturables)
+-- =====================================================================
+create table if not exists public.features (
+  key text primary key,
+  label text not null,
+  pack text,
+  enabled boolean not null default false,
+  enabled_at timestamptz,
+  enabled_by uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.features enable row level security;
+
+drop policy if exists "features_select_authenticated" on public.features;
+create policy "features_select_authenticated" on public.features
+  for select to authenticated
+  using (public.is_agent());
+
+-- Reserve au SuperAdmin (proprietaire), pas aux administrateurs classiques.
+drop policy if exists "features_admin_write" on public.features;
+create policy "features_admin_write" on public.features
+  for all to authenticated
+  using (public.is_owner())
+  with check (public.is_owner());
+
+-- =====================================================================
+-- TABLE: audit_log (brique "Journal d'audit complet")
+-- =====================================================================
+create table if not exists public.audit_log (
+  id uuid primary key default gen_random_uuid(),
+  actor_id uuid references public.agents(id) on delete set null,
+  action text not null check (action in ('insert', 'update', 'delete')),
+  table_name text not null,
+  record_id text,
+  old_data jsonb,
+  new_data jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists audit_log_created_idx on public.audit_log(created_at desc);
+create index if not exists audit_log_table_idx on public.audit_log(table_name);
+create index if not exists audit_log_actor_idx on public.audit_log(actor_id);
+
+alter table public.audit_log enable row level security;
+
+drop policy if exists "audit_log_select" on public.audit_log;
+create policy "audit_log_select" on public.audit_log
+  for select to authenticated
+  using (public.is_admin());
+
+create or replace function public.fn_audit_log()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_row jsonb;
+begin
+  v_row := coalesce(to_jsonb(new), to_jsonb(old));
+  insert into public.audit_log (actor_id, action, table_name, record_id, old_data, new_data)
+  values (
+    auth.uid(),
+    lower(TG_OP),
+    TG_TABLE_NAME,
+    coalesce(v_row ->> 'id', v_row ->> 'key'),
+    case when TG_OP in ('UPDATE', 'DELETE') then to_jsonb(old) else null end,
+    case when TG_OP in ('INSERT', 'UPDATE') then to_jsonb(new) else null end
+  );
+  return coalesce(new, old);
+end;
+$$;
+
+drop trigger if exists trg_audit_players on public.players;
+create trigger trg_audit_players
+  after insert or update or delete on public.players
+  for each row execute function public.fn_audit_log();
+
+drop trigger if exists trg_audit_clubs on public.clubs;
+create trigger trg_audit_clubs
+  after insert or update or delete on public.clubs
+  for each row execute function public.fn_audit_log();
+
+drop trigger if exists trg_audit_player_deals on public.player_deals;
+create trigger trg_audit_player_deals
+  after insert or update or delete on public.player_deals
+  for each row execute function public.fn_audit_log();
+
+drop trigger if exists trg_audit_deal_commissions on public.deal_commissions;
+create trigger trg_audit_deal_commissions
+  after insert or update or delete on public.deal_commissions
+  for each row execute function public.fn_audit_log();
+
+drop trigger if exists trg_audit_player_contracts on public.player_contracts;
+create trigger trg_audit_player_contracts
+  after insert or update or delete on public.player_contracts
+  for each row execute function public.fn_audit_log();
+
+drop trigger if exists trg_audit_agents on public.agents;
+create trigger trg_audit_agents
+  after insert or update or delete on public.agents
+  for each row execute function public.fn_audit_log();
+
+drop trigger if exists trg_audit_features on public.features;
+create trigger trg_audit_features
+  after insert or update or delete on public.features
+  for each row execute function public.fn_audit_log();
+
+-- =====================================================================
+-- TABLE: rgpd_requests (brique "Conformité RGPD avancée")
+-- =====================================================================
+create table if not exists public.rgpd_requests (
+  id uuid primary key default gen_random_uuid(),
+  player_id uuid references public.players(id) on delete set null,
+  player_nom text not null,
+  type text not null check (type in ('acces', 'rectification', 'suppression', 'opposition', 'portabilite')),
+  statut text not null default 'recue' check (statut in ('recue', 'en_cours', 'traitee', 'refusee')),
+  date_reception date not null default current_date,
+  date_traitement date,
+  notes text,
+  agent_id uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create index if not exists rgpd_requests_player_id_idx on public.rgpd_requests(player_id);
+create index if not exists rgpd_requests_statut_idx on public.rgpd_requests(statut);
+
+alter table public.rgpd_requests enable row level security;
+
+drop policy if exists "rgpd_requests_select" on public.rgpd_requests;
+create policy "rgpd_requests_select" on public.rgpd_requests
+  for select to authenticated
+  using (public.is_admin());
+
+drop policy if exists "rgpd_requests_write" on public.rgpd_requests;
+create policy "rgpd_requests_write" on public.rgpd_requests
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+drop trigger if exists trg_audit_rgpd_requests on public.rgpd_requests;
+create trigger trg_audit_rgpd_requests
+  after insert or update or delete on public.rgpd_requests
+  for each row execute function public.fn_audit_log();
+
+-- =====================================================================
+-- TABLE: notifications (brique "Notifications in-app")
+-- =====================================================================
+create table if not exists public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  agent_id uuid not null references public.agents(id) on delete cascade,
+  title text not null,
+  message text,
+  link text,
+  read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create index if not exists notifications_agent_id_idx on public.notifications(agent_id);
+
+alter table public.notifications enable row level security;
+
+drop policy if exists "notifications_select" on public.notifications;
+create policy "notifications_select" on public.notifications
+  for select to authenticated
+  using (agent_id = auth.uid());
+
+drop policy if exists "notifications_insert" on public.notifications;
+create policy "notifications_insert" on public.notifications
+  for insert to authenticated
+  with check (agent_id = auth.uid() or public.is_admin());
+
+drop policy if exists "notifications_update" on public.notifications;
+create policy "notifications_update" on public.notifications
+  for update to authenticated
+  using (agent_id = auth.uid())
+  with check (agent_id = auth.uid());
+
+drop policy if exists "notifications_delete" on public.notifications;
+create policy "notifications_delete" on public.notifications
+  for delete to authenticated
+  using (agent_id = auth.uid());
+
+-- =====================================================================
+-- TABLE: player_videos (brique "Galerie vidéos / highlights")
+-- =====================================================================
+create table if not exists public.player_videos (
+  id uuid primary key default gen_random_uuid(),
+  player_id uuid not null references public.players(id) on delete cascade,
+  titre text not null,
+  url text not null,
+  agent_id uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create index if not exists player_videos_player_id_idx on public.player_videos(player_id);
+
+alter table public.player_videos enable row level security;
+
+drop policy if exists "player_videos_select" on public.player_videos;
+create policy "player_videos_select" on public.player_videos
+  for select to authenticated
+  using (
+    public.has_perm('view_all_players') or exists (
+      select 1 from public.players p
+      where p.id = player_videos.player_id
+      and (public.is_admin() or p.agent_referent = auth.uid())
+    )
+  );
+
+drop policy if exists "player_videos_write" on public.player_videos;
+create policy "player_videos_write" on public.player_videos
+  for all to authenticated
+  using (
+    public.is_admin() or public.has_perm('edit_players') or exists (
+      select 1 from public.players p
+      where p.id = player_videos.player_id and p.agent_referent = auth.uid()
+    )
+  )
+  with check (
+    public.is_admin() or public.has_perm('edit_players') or exists (
+      select 1 from public.players p
+      where p.id = player_videos.player_id and p.agent_referent = auth.uid()
+    )
+  );
+
+-- =====================================================================
+-- TABLE: saved_searches (brique "Recherche avancée & filtres sauvegardés")
+-- =====================================================================
+create table if not exists public.saved_searches (
+  id uuid primary key default gen_random_uuid(),
+  agent_id uuid not null references public.agents(id) on delete cascade,
+  nom text not null,
+  search text,
+  filters jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists saved_searches_agent_id_idx on public.saved_searches(agent_id);
+
+alter table public.saved_searches enable row level security;
+
+drop policy if exists "saved_searches_select" on public.saved_searches;
+create policy "saved_searches_select" on public.saved_searches
+  for select to authenticated
+  using (agent_id = auth.uid());
+
+drop policy if exists "saved_searches_write" on public.saved_searches;
+create policy "saved_searches_write" on public.saved_searches
+  for all to authenticated
+  using (agent_id = auth.uid())
+  with check (agent_id = auth.uid());
+
+-- =====================================================================
+-- Pack "Vitrine & présence en ligne" — pages publiques (anon), gardees
+-- eteintes tant que la brique correspondante n'est pas activee via
+-- is_feature_enabled() (security definer, lisible par anon).
+-- =====================================================================
+create or replace function public.is_feature_enabled(p_key text)
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select coalesce((select enabled from public.features where key = p_key), false);
+$$;
+
+grant execute on function public.is_feature_enabled(text) to anon, authenticated;
+
+create or replace function public.get_vitrine_joueurs()
+returns table (
+  id uuid, prenom text, nom text, poste text, nationalite text,
+  date_naissance date, club_actuel text, photo_url text
+)
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select p.id, p.prenom, p.nom, p.poste, p.nationalite, p.date_naissance, p.club_actuel, p.photo_url
+  from public.players p
+  where p.vitrine_public = true
+    and p.consentement_rgpd = true
+    and public.is_feature_enabled('vitrine_public_joueurs')
+  order by p.nom;
+$$;
+
+grant execute on function public.get_vitrine_joueurs() to anon, authenticated;
+
+-- =====================================================================
+-- TABLE: blog_posts (brique "Blog / actualités")
+-- =====================================================================
+create table if not exists public.blog_posts (
+  id uuid primary key default gen_random_uuid(),
+  titre text not null,
+  slug text not null unique,
+  extrait text,
+  contenu text not null,
+  publie boolean not null default false,
+  published_at timestamptz,
+  agent_id uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists blog_posts_slug_idx on public.blog_posts(slug);
+create index if not exists blog_posts_publie_idx on public.blog_posts(publie);
+
+drop trigger if exists blog_posts_set_updated_at on public.blog_posts;
+create trigger blog_posts_set_updated_at
+before update on public.blog_posts
+for each row execute function public.set_updated_at();
+
+alter table public.blog_posts enable row level security;
+
+drop policy if exists "blog_posts_select_authenticated" on public.blog_posts;
+create policy "blog_posts_select_authenticated" on public.blog_posts
+  for select to authenticated
+  using (public.is_admin() or publie = true);
+
+drop policy if exists "blog_posts_write" on public.blog_posts;
+create policy "blog_posts_write" on public.blog_posts
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+drop trigger if exists trg_audit_blog_posts on public.blog_posts;
+create trigger trg_audit_blog_posts
+  after insert or update or delete on public.blog_posts
+  for each row execute function public.fn_audit_log();
+
+create or replace function public.get_vitrine_blog_posts()
+returns table (
+  id uuid, titre text, slug text, extrait text, contenu text, published_at timestamptz
+)
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select b.id, b.titre, b.slug, b.extrait, b.contenu, b.published_at
+  from public.blog_posts b
+  where b.publie = true
+    and public.is_feature_enabled('vitrine_blog')
+  order by b.published_at desc nulls last, b.created_at desc;
+$$;
+
+grant execute on function public.get_vitrine_blog_posts() to anon, authenticated;
+
+-- =====================================================================
+-- Générateur de documents (mandats, contrats...) — brique
+-- media_generateur_documents
+-- =====================================================================
+create table if not exists public.document_templates (
+  id uuid primary key default gen_random_uuid(),
+  type text not null,
+  nom text not null,
+  description text,
+  paragraphes jsonb not null default '[]'::jsonb,
+  champs jsonb not null default '[]'::jsonb,
+  actif boolean not null default true,
+  agent_id uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists document_templates_type_idx on public.document_templates(type);
+
+drop trigger if exists document_templates_set_updated_at on public.document_templates;
+create trigger document_templates_set_updated_at
+before update on public.document_templates
+for each row execute function public.set_updated_at();
+
+alter table public.document_templates enable row level security;
+
+drop policy if exists "document_templates_select" on public.document_templates;
+create policy "document_templates_select" on public.document_templates
+  for select to authenticated
+  using (public.is_agent());
+
+drop policy if exists "document_templates_write" on public.document_templates;
+create policy "document_templates_write" on public.document_templates
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+drop trigger if exists trg_audit_document_templates on public.document_templates;
+create trigger trg_audit_document_templates
+  after insert or update or delete on public.document_templates
+  for each row execute function public.fn_audit_log();
+
+create table if not exists public.generated_documents (
+  id uuid primary key default gen_random_uuid(),
+  template_id uuid references public.document_templates(id) on delete set null,
+  type text not null,
+  titre text not null,
+  player_id uuid references public.players(id) on delete set null,
+  club_id uuid references public.clubs(id) on delete set null,
+  form_data jsonb not null default '{}'::jsonb,
+  paragraphes jsonb not null default '[]'::jsonb,
+  statut text not null default 'brouillon' check (statut in ('brouillon', 'finalise')),
+  agent_id uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists generated_documents_player_id_idx on public.generated_documents(player_id);
+create index if not exists generated_documents_type_idx on public.generated_documents(type);
+
+drop trigger if exists generated_documents_set_updated_at on public.generated_documents;
+create trigger generated_documents_set_updated_at
+before update on public.generated_documents
+for each row execute function public.set_updated_at();
+
+alter table public.generated_documents enable row level security;
+
+drop policy if exists "generated_documents_select" on public.generated_documents;
+create policy "generated_documents_select" on public.generated_documents
+  for select to authenticated
+  using (
+    public.is_admin() or public.has_perm('view_all_players') or agent_id = auth.uid() or exists (
+      select 1 from public.players p where p.id = generated_documents.player_id and p.agent_referent = auth.uid()
+    )
+  );
+
+drop policy if exists "generated_documents_write" on public.generated_documents;
+create policy "generated_documents_write" on public.generated_documents
+  for all to authenticated
+  using (
+    public.is_admin() or public.has_perm('edit_players') or agent_id = auth.uid() or exists (
+      select 1 from public.players p where p.id = generated_documents.player_id and p.agent_referent = auth.uid()
+    )
+  )
+  with check (
+    public.is_admin() or public.has_perm('edit_players') or agent_id = auth.uid() or exists (
+      select 1 from public.players p where p.id = generated_documents.player_id and p.agent_referent = auth.uid()
+    )
+  );
+
+drop trigger if exists trg_audit_generated_documents on public.generated_documents;
+create trigger trg_audit_generated_documents
+  after insert or update or delete on public.generated_documents
+  for each row execute function public.fn_audit_log();
+
+-- =====================================================================
+-- Assistant IA droit du sport (data_assistant_juridique)
+-- =====================================================================
+create table if not exists public.legal_sources (
+  id uuid primary key default gen_random_uuid(),
+  titre text not null,
+  categorie text not null check (categorie in ('fifa_rstp', 'fifa_ffar', 'uefa', 'code_sport', 'charte_lfp_fff', 'jurisprudence_cas', 'autre')),
+  url_source text,
+  actif boolean not null default true,
+  agent_id uuid references public.agents(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.legal_sources enable row level security;
+
+drop policy if exists "legal_sources_select" on public.legal_sources;
+create policy "legal_sources_select" on public.legal_sources
+  for select to authenticated
+  using (public.is_agent());
+
+drop policy if exists "legal_sources_write" on public.legal_sources;
+create policy "legal_sources_write" on public.legal_sources
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+drop trigger if exists trg_audit_legal_sources on public.legal_sources;
+create trigger trg_audit_legal_sources
+  after insert or update or delete on public.legal_sources
+  for each row execute function public.fn_audit_log();
+
+create table if not exists public.legal_chunks (
+  id uuid primary key default gen_random_uuid(),
+  source_id uuid not null references public.legal_sources(id) on delete cascade,
+  reference text,
+  contenu text not null,
+  ordre int not null default 0,
+  search_vector tsvector generated always as (to_tsvector('french', coalesce(reference, '') || ' ' || contenu)) stored,
+  created_at timestamptz not null default now()
+);
+create index if not exists legal_chunks_source_id_idx on public.legal_chunks(source_id);
+create index if not exists legal_chunks_search_idx on public.legal_chunks using gin (search_vector);
+
+alter table public.legal_chunks enable row level security;
+
+drop policy if exists "legal_chunks_select" on public.legal_chunks;
+create policy "legal_chunks_select" on public.legal_chunks
+  for select to authenticated
+  using (public.is_agent());
+
+drop policy if exists "legal_chunks_write" on public.legal_chunks;
+create policy "legal_chunks_write" on public.legal_chunks
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+create or replace function public.search_legal_chunks(p_query text, p_limit int default 8)
+returns table (
+  id uuid, source_id uuid, reference text, contenu text,
+  source_titre text, source_categorie text, rank real
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select c.id, c.source_id, c.reference, c.contenu, s.titre, s.categorie,
+    ts_rank(c.search_vector, websearch_to_tsquery('french', p_query)) as rank
+  from public.legal_chunks c
+  join public.legal_sources s on s.id = c.source_id and s.actif = true
+  where c.search_vector @@ websearch_to_tsquery('french', p_query)
+  order by rank desc
+  limit p_limit;
+$$;
+
+grant execute on function public.search_legal_chunks(text, int) to authenticated;
+
+create table if not exists public.legal_queries (
+  id uuid primary key default gen_random_uuid(),
+  agent_id uuid references public.agents(id) on delete set null,
+  question text not null,
+  reponse text,
+  sources jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists legal_queries_agent_id_idx on public.legal_queries(agent_id);
+
+alter table public.legal_queries enable row level security;
+
+drop policy if exists "legal_queries_select" on public.legal_queries;
+create policy "legal_queries_select" on public.legal_queries
+  for select to authenticated
+  using (public.is_admin() or agent_id = auth.uid());
+
+drop policy if exists "legal_queries_insert" on public.legal_queries;
+create policy "legal_queries_insert" on public.legal_queries
+  for insert to authenticated
+  with check (agent_id = auth.uid());
+
+drop policy if exists "legal_queries_delete" on public.legal_queries;
+create policy "legal_queries_delete" on public.legal_queries
+  for delete to authenticated
+  using (public.is_admin() or agent_id = auth.uid());

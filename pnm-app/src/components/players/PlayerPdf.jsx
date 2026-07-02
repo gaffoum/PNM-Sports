@@ -53,6 +53,11 @@ const s = StyleSheet.create({
 
   notes: { fontSize: 9, lineHeight: 1.4, color: "#cfe2f0", backgroundColor: C.panel, borderRadius: 8, padding: 12, marginTop: 4 },
   footer: { position: "absolute", bottom: 18, left: 28, right: 28, textAlign: "center", fontSize: 7, color: C.dim, borderTop: `1px solid ${C.panelLine}`, paddingTop: 4 },
+
+  bookTitle: { fontSize: 16, fontWeight: 700, color: C.white, marginBottom: 14 },
+  bookRow: { flexDirection: "row", alignItems: "center", paddingVertical: 6, borderBottom: `1px solid ${C.panelLine}` },
+  bookLabel: { fontSize: 9, fontWeight: 700, color: C.cyan, width: 130 },
+  bookValue: { fontSize: 9, color: "#d7e7f2", flex: 1 },
 });
 
 function Field({ label, value }) {
@@ -82,8 +87,19 @@ function poly(cx, cy, r) {
   }).join(" ");
 }
 
-function RadarPlaceholder() {
+const AXES_KEYS = ["vitesse", "technique", "physique", "mental", "tactique", "passes"];
+
+function RadarPlaceholder({ evaluation }) {
   const W = 250, H = 210, cx = 125, cy = 100, R = 78;
+  const hasData = !!evaluation;
+  const dataPoints = hasData
+    ? AXES_KEYS.map((k, i) => {
+        const v = Number(evaluation[k]) || 0;
+        const r = R * (v / 10);
+        const a = -Math.PI / 2 + (i * Math.PI) / 3;
+        return `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`;
+      }).join(" ")
+    : null;
   return (
     <View style={s.radarWrap}>
       <Svg width={W} height={H}>
@@ -101,14 +117,68 @@ function RadarPlaceholder() {
             </G>
           );
         })}
-        <SvgText x={cx} y={cy} fill={C.dim} fontSize={8} textAnchor="middle">Évaluation à venir</SvgText>
+        {hasData ? (
+          <Polygon points={dataPoints} stroke={C.cyan} strokeWidth={1.5} fill="rgba(124,227,255,0.22)" />
+        ) : (
+          <SvgText x={cx} y={cy} fill={C.dim} fontSize={8} textAnchor="middle">Évaluation à venir</SvgText>
+        )}
       </Svg>
-      <Text style={s.radarNote}>Notation en attente — API BeSoccer Pro</Text>
+      <Text style={s.radarNote}>
+        {hasData ? "Scouting interne PNM" : "Notation en attente — scouting interne ou API BeSoccer Pro"}
+      </Text>
     </View>
   );
 }
 
-export default function PlayerPdf({ player, stats = [] }) {
+function BookPage({ player, videos, docs }) {
+  return (
+    <Page size="A4" style={s.page}>
+      <View style={s.header}>
+        <View style={s.headerLeft}>
+          <Silhouette />
+          <View>
+            <Text style={s.name}>{player.prenom} {player.nom}</Text>
+            <Text style={s.sub}>BOOK — MÉDIAS &amp; DOCUMENTS</Text>
+          </View>
+        </View>
+        <Image src={LOGO_URL} style={s.logo} />
+      </View>
+      <View style={s.content}>
+        <View style={s.card}>
+          <Text style={s.cardTitle}>VIDÉOS &amp; HIGHLIGHTS</Text>
+          {videos.length === 0 ? (
+            <Text style={s.radarNote}>Aucune vidéo ajoutée.</Text>
+          ) : (
+            videos.map((v) => (
+              <View key={v.id} style={s.bookRow}>
+                <Text style={s.bookLabel}>{v.titre}</Text>
+                <Text style={s.bookValue}>{v.url}</Text>
+              </View>
+            ))
+          )}
+        </View>
+        <View style={s.card}>
+          <Text style={s.cardTitle}>DOCUMENTS</Text>
+          {docs.length === 0 ? (
+            <Text style={s.radarNote}>Aucun document ajouté.</Text>
+          ) : (
+            docs.map((d) => (
+              <View key={d.id} style={s.bookRow}>
+                <Text style={s.bookLabel}>{d.nom}</Text>
+                <Text style={s.bookValue}>{d.type ?? "—"}</Text>
+              </View>
+            ))
+          )}
+        </View>
+      </View>
+      <Text style={s.footer}>
+        PNM Sports — Document confidentiel — Usage interne uniquement · Édité le {formatDateFr(new Date())}
+      </Text>
+    </Page>
+  );
+}
+
+export default function PlayerPdf({ player, stats = [], evaluation = null, book = false, videos = [], docs = [] }) {
   const age = calcAge(player.date_naissance);
   const careerLine = [player.club_actuel, player.poste].filter(Boolean).join("  ·  ") || "—";
   return (
@@ -167,7 +237,7 @@ export default function PlayerPdf({ player, stats = [] }) {
             <View style={s.rule} />
           </View>
 
-          <RadarPlaceholder />
+          <RadarPlaceholder evaluation={evaluation} />
 
           {stats.length > 0 ? (
             <View style={s.table}>
@@ -201,6 +271,7 @@ export default function PlayerPdf({ player, stats = [] }) {
           PNM Sports — Document confidentiel — Usage interne uniquement · Édité le {formatDateFr(new Date())}
         </Text>
       </Page>
+      {book && <BookPage player={player} videos={videos} docs={docs} />}
     </Document>
   );
 }

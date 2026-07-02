@@ -11,7 +11,26 @@
     { "source": "/players", "destination": "/agent/index.html" },
     { "source": "/players/:path*", "destination": "/agent/index.html" },
     { "source": "/recrutement", "destination": "/agent/index.html" },
-    { "source": "/agents", "destination": "/agent/index.html" }
+    { "source": "/agents", "destination": "/agent/index.html" },
+    { "source": "/features", "destination": "/agent/index.html" },
+    { "source": "/clubs", "destination": "/agent/index.html" },
+    { "source": "/clubs/:path*", "destination": "/agent/index.html" },
+    { "source": "/besoins-clubs", "destination": "/agent/index.html" },
+    { "source": "/agenda", "destination": "/agent/index.html" },
+    { "source": "/pipeline", "destination": "/agent/index.html" },
+    { "source": "/commissions", "destination": "/agent/index.html" },
+    { "source": "/audit", "destination": "/agent/index.html" },
+    { "source": "/rgpd", "destination": "/agent/index.html" },
+    { "source": "/portefeuille", "destination": "/agent/index.html" },
+    { "source": "/rapports", "destination": "/agent/index.html" },
+    { "source": "/blog", "destination": "/agent/index.html" },
+    { "source": "/vitrine", "destination": "/agent/index.html" },
+    { "source": "/actualites", "destination": "/agent/index.html" },
+    { "source": "/actualites/:path*", "destination": "/agent/index.html" },
+    { "source": "/documents", "destination": "/agent/index.html" },
+    { "source": "/documents/:path*", "destination": "/agent/index.html" },
+    { "source": "/assistant-juridique", "destination": "/agent/index.html" },
+    { "source": "/assistant-juridique/:path*", "destination": "/agent/index.html" }
   ],
   "headers": [
     {

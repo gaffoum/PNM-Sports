@@ -26,6 +26,10 @@ mkdir -p "$OUT/agent"
 cp index.html globe.js world-land.js world-110m.json "$OUT/"
 cp -r assets uploads "$OUT/"
 
+# PWA (brique "Application mobile") : servis a la racine pour couvrir
+# tout le site (landing + app agents) avec un seul service worker.
+cp manifest.webmanifest sw.js "$OUT/"
+
 # Build de l'app agents sous /agent/
 cp -r pnm-app/dist/. "$OUT/agent/"
 

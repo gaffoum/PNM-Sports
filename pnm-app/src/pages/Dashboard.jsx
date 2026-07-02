@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Users, UserPlus, AlertTriangle, Activity, ChevronRight, UserCheck, UserSearch } from "lucide-react";
+import { Users, UserPlus, AlertTriangle, Activity, ChevronRight, UserCheck, UserSearch, GitMerge, Euro, CalendarClock, ClipboardList } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../hooks/useAuth";
-import { formatDateFr } from "../lib/utils";
+import { useFeatures } from "../hooks/useFeatures";
+import { formatDateFr, formatMoney } from "../lib/utils";
 import { describeActivity } from "../lib/activityLabels";
 
 function StatCard({ icon: Icon, label, value, tone = "cyan", to }) {
@@ -30,7 +31,14 @@ function StatCard({ icon: Icon, label, value, tone = "cyan", to }) {
 
 export default function Dashboard() {
   const { agent } = useAuth();
+  const { hasFeature } = useFeatures();
+  const hasPilotage = hasFeature("pilotage_dashboard");
+  const hasPipeline = hasFeature("placement_pipeline");
+  const hasCommissions = hasFeature("placement_commissions");
+  const hasAgenda = hasFeature("placement_agenda");
+  const hasBesoinsClubs = hasFeature("placement_besoins_clubs");
   const [counts, setCounts] = useState({ joueurs: 0, prospects: 0, expirent: 0 });
+  const [pilotage, setPilotage] = useState({ pipelineValue: 0, commissionsAttendues: 0, rdvSemaine: 0, besoinsOuverts: 0 });
   const [activity, setActivity] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -58,6 +66,40 @@ export default function Dashboard() {
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    if (!hasPilotage) return;
+    let active = true;
+    (async () => {
+      const now = new Date();
+      const in7d = new Date();
+      in7d.setDate(in7d.getDate() + 7);
+
+      const [deals, commissions, rdv, besoins] = await Promise.all([
+        hasPipeline
+          ? supabase.from("player_deals").select("montant_propose").eq("statut", "en_discussion")
+          : Promise.resolve({ data: [] }),
+        hasCommissions
+          ? supabase.from("deal_commissions").select("montant").neq("statut", "encaissee")
+          : Promise.resolve({ data: [] }),
+        hasAgenda
+          ? supabase.from("appointments").select("id", { count: "exact", head: true })
+              .eq("statut", "a_venir").gte("date_rdv", now.toISOString()).lte("date_rdv", in7d.toISOString())
+          : Promise.resolve({ count: 0 }),
+        hasBesoinsClubs
+          ? supabase.from("club_needs").select("id", { count: "exact", head: true }).eq("statut", "ouvert")
+          : Promise.resolve({ count: 0 }),
+      ]);
+      if (!active) return;
+      setPilotage({
+        pipelineValue: (deals.data ?? []).reduce((s, d) => s + Number(d.montant_propose || 0), 0),
+        commissionsAttendues: (commissions.data ?? []).reduce((s, c) => s + Number(c.montant || 0), 0),
+        rdvSemaine: rdv.count ?? 0,
+        besoinsOuverts: besoins.count ?? 0,
+      });
+    })();
+    return () => { active = false; };
+  }, [hasPilotage, hasPipeline, hasCommissions, hasAgenda, hasBesoinsClubs]);
+
   const todayStr = new Date().toISOString().slice(0, 10);
   const sixMoStr = (() => {
     const d = new Date();
@@ -79,6 +121,18 @@ export default function Dashboard() {
         <StatCard icon={UserSearch} label="Prospects suivis" value={loading ? "—" : counts.prospects} tone="violet" to="/players?statut=prospect" />
         <StatCard icon={AlertTriangle} label="Contrats < 6 mois" value={loading ? "—" : counts.expirent} tone="amber" to={`/players?fin_contrat_apres=${todayStr}&fin_contrat_avant=${sixMoStr}`} />
       </section>
+
+      {hasPilotage && (hasPipeline || hasCommissions || hasAgenda || hasBesoinsClubs) && (
+        <section className="space-y-3">
+          <h2 className="text-xs uppercase tracking-[0.18em] text-ink-muted">Vue avancée</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {hasPipeline && <StatCard icon={GitMerge} label="Pipeline en discussion" value={formatMoney(pilotage.pipelineValue)} tone="cyan" to="/pipeline" />}
+            {hasCommissions && <StatCard icon={Euro} label="Commissions attendues" value={formatMoney(pilotage.commissionsAttendues)} tone="violet" to="/commissions" />}
+            {hasAgenda && <StatCard icon={CalendarClock} label="RDV à venir (7 j)" value={pilotage.rdvSemaine} tone="amber" to="/agenda" />}
+            {hasBesoinsClubs && <StatCard icon={ClipboardList} label="Besoins clubs ouverts" value={pilotage.besoinsOuverts} tone="cyan" to="/besoins-clubs" />}
+          </div>
+        </section>
+      )}
 
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Link to="/players" className="panel panel-hover p-5 group">

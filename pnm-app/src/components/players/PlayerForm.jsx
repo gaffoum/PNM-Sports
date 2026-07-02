@@ -6,8 +6,10 @@ import { Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
+import { useFeatures } from "../../hooks/useFeatures";
 import { STEPS, STEP_KEYS, DEFAULT_STEP, statutForStep } from "../../lib/recruitment";
 import { CLUBS } from "../../lib/clubs";
+import AutocompleteInput from "../common/AutocompleteInput";
 
 const schema = z.object({
   nom: z.string().min(1, "Requis"),
@@ -28,6 +30,7 @@ const schema = z.object({
   agent_referent: z.string().uuid().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
   consentement_rgpd: z.boolean().optional(),
+  vitrine_public: z.boolean().optional(),
 });
 
 function cleanForDB(values) {
@@ -42,16 +45,19 @@ function cleanForDB(values) {
 
 export default function PlayerForm({ player, onCancel, onSaved }) {
   const { agent, isAdmin, can } = useAuth();
+  const { hasFeature } = useFeatures();
+  const hasVitrine = hasFeature("vitrine_public_joueurs");
   const canAssign = isAdmin || can("edit_players");
   const [agents, setAgents] = useState([]);
   const [saving, setSaving] = useState(false);
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+  const { register, handleSubmit, watch, setValue, formState: { errors }, reset } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       recruitment_step: DEFAULT_STEP,
       agent_referent: agent?.id ?? "",
       consentement_rgpd: false,
+      vitrine_public: false,
       ...player,
       date_naissance: player?.date_naissance ?? "",
       fin_contrat: player?.fin_contrat ?? "",
@@ -107,9 +113,6 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <datalist id="clubs-list">
-        {CLUBS.map((c) => <option key={c} value={c} />)}
-      </datalist>
       <section className="panel p-5 space-y-4">
         <h3 className="text-sm uppercase tracking-wider text-cyan-bright">Identité</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -152,8 +155,26 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
       <section className="panel p-5 space-y-4">
         <h3 className="text-sm uppercase tracking-wider text-cyan-bright">Carrière</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Field name="club_actuel" label="Club actuel" list="clubs-list" placeholder="Choisir ou saisir…" />
-          <Field name="club_precedent" label="Club précédent" list="clubs-list" placeholder="Choisir ou saisir…" />
+          <div>
+            <label className="label">Club actuel</label>
+            <AutocompleteInput
+              options={CLUBS}
+              value={watch("club_actuel") ?? ""}
+              onChange={(v) => setValue("club_actuel", v, { shouldValidate: true, shouldDirty: true })}
+              placeholder="Choisir ou saisir…"
+            />
+            {errors.club_actuel && <p className="text-[11px] text-red-300 mt-1">{errors.club_actuel.message}</p>}
+          </div>
+          <div>
+            <label className="label">Club précédent</label>
+            <AutocompleteInput
+              options={CLUBS}
+              value={watch("club_precedent") ?? ""}
+              onChange={(v) => setValue("club_precedent", v, { shouldValidate: true, shouldDirty: true })}
+              placeholder="Choisir ou saisir…"
+            />
+            {errors.club_precedent && <p className="text-[11px] text-red-300 mt-1">{errors.club_precedent.message}</p>}
+          </div>
           <Field name="fin_contrat" label="Fin de contrat" type="date" />
           <Field name="valeur_estimee_eur" label="Valeur estimée (€)" type="number" />
         </div>
@@ -181,6 +202,18 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
           </span>
         </label>
       </section>
+
+      {hasVitrine && (
+        <section className="panel p-5">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" className="mt-1" {...register("vitrine_public")} />
+            <span className="text-sm text-ink-dim">
+              Afficher ce joueur sur l'<b>espace public</b> du site (nom, poste, nationalité, club actuel, photo).
+              Nécessite le consentement RGPD ci-dessus.
+            </span>
+          </label>
+        </section>
+      )}
 
       <div className="flex justify-end gap-2 sticky bottom-4">
         <button type="button" onClick={onCancel} className="btn btn-ghost"><X className="w-4 h-4" />Annuler</button>
