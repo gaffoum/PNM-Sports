@@ -1,12 +1,14 @@
 // Edge Function : legal-assistant-query
 // Brique commerciale « Assistant IA droit du sport » (pack Data & Scouting).
 // Recherche plein texte dans legal_chunks (via search_legal_chunks), puis
-// demande a Claude de repondre STRICTEMENT a partir des extraits fournis,
-// en citant systematiquement leur reference.
+// demande à l'IA de répondre STRICTEMENT à partir des extraits fournis,
+// en citant systématiquement leur référence.
 //
-// Variable d'environnement à définir (Supabase → Project Settings → Edge
+// Variables d'environnement à définir (Supabase → Project Settings → Edge
 // Functions → Secrets) :
-//   ANTHROPIC_API_KEY  (déjà requis pour le générateur de documents)
+//   ANTHROPIC_API_KEY  (fournisseur principal)
+//   GEMINI_API_KEY     (optionnel — repli automatique si Anthropic échoue :
+//                        crédit épuisé, timeout, erreur...)
 //
 // Déploiement : supabase functions deploy legal-assistant-query
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -31,6 +33,90 @@ Regles strictes :
 4. Termine toujours ta réponse par ce rappel exact : "Cette réponse est informative et ne remplace pas l'avis d'un
    avocat spécialisé en droit du sport."
 5. Réponds en français, de façon claire et structurée.`;
+
+async function callAnthropic(system: string, text: string, maxTokens: number, apiKey: string, timeoutMs: number): Promise<string> {
+  let res: Response;
+  try {
+    res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-5",
+        max_tokens: maxTokens,
+        system,
+        messages: [{ role: "user", content: text }],
+      }),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch (e) {
+    const isTimeout = (e as Error)?.name === "TimeoutError" || (e as Error)?.name === "AbortError";
+    throw new Error(isTimeout ? "délai dépassé" : String((e as Error)?.message ?? e));
+  }
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    let msg = detail;
+    try { msg = JSON.parse(detail)?.error?.message ?? detail; } catch { /* garde le texte brut */ }
+    throw new Error(`HTTP ${res.status} — ${msg}`.slice(0, 400));
+  }
+  const data = await res.json();
+  const block = (data.content ?? []).find((b: any) => b.type === "text");
+  if (!block) throw new Error("réponse sans contenu texte");
+  return block.text;
+}
+
+async function callGemini(system: string, text: string, maxTokens: number, apiKey: string, timeoutMs: number): Promise<string> {
+  const model = "gemini-2.0-flash";
+  let res: Response;
+  try {
+    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [{ role: "user", parts: [{ text }] }],
+        generationConfig: { maxOutputTokens: maxTokens },
+      }),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch (e) {
+    const isTimeout = (e as Error)?.name === "TimeoutError" || (e as Error)?.name === "AbortError";
+    throw new Error(isTimeout ? "délai dépassé" : String((e as Error)?.message ?? e));
+  }
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    let msg = detail;
+    try { msg = JSON.parse(detail)?.error?.message ?? detail; } catch { /* garde le texte brut */ }
+    throw new Error(`HTTP ${res.status} — ${msg}`.slice(0, 400));
+  }
+  const data = await res.json();
+  const t = (data?.candidates?.[0]?.content?.parts ?? []).map((p: any) => p.text ?? "").join("");
+  if (!t) throw new Error("réponse sans contenu texte");
+  return t;
+}
+
+async function callAI(system: string, text: string, maxTokens: number): Promise<{ text: string; provider: string }> {
+  const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+  const geminiKey = Deno.env.get("GEMINI_API_KEY");
+  const errors: string[] = [];
+
+  if (anthropicKey) {
+    try {
+      return { text: await callAnthropic(system, text, maxTokens, anthropicKey, 50_000), provider: "anthropic" };
+    } catch (e) {
+      console.error("Anthropic failed:", e);
+      errors.push(`Anthropic — ${(e as Error).message}`);
+    }
+  }
+  if (geminiKey) {
+    try {
+      return { text: await callGemini(system, text, maxTokens, geminiKey, 50_000), provider: "gemini" };
+    } catch (e) {
+      console.error("Gemini failed:", e);
+      errors.push(`Gemini — ${(e as Error).message}`);
+    }
+  }
+  throw new Error(errors.length ? errors.join(" | ") : "Aucun fournisseur IA configuré (ANTHROPIC_API_KEY / GEMINI_API_KEY manquants).");
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -65,56 +151,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!apiKey) return json({ error: "Service IA non configuré (ANTHROPIC_API_KEY manquant)." }, 500);
-
     const context = chunks
       .map((c: any, i: number) => `[Extrait ${i + 1} — ${c.source_titre}${c.reference ? `, ${c.reference}` : ""}]\n${c.contenu}`)
       .join("\n\n");
 
-    let claudeRes: Response;
+    let result;
     try {
-      claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-5",
-          max_tokens: 2048,
-          system: SYSTEM_PROMPT,
-          messages: [
-            { role: "user", content: `Extraits disponibles :\n\n${context}\n\nQuestion de l'agent : ${question}` },
-          ],
-        }),
-        signal: AbortSignal.timeout(50_000),
-      });
-    } catch (fetchErr) {
-      const isTimeout = (fetchErr as Error)?.name === "TimeoutError" || (fetchErr as Error)?.name === "AbortError";
-      return json({
-        error: isTimeout
-          ? "La génération de la réponse a dépassé le délai autorisé (50s). Réessaie."
-          : `Échec de l'appel à l'IA : ${String((fetchErr as Error)?.message ?? fetchErr)}`,
-      }, isTimeout ? 504 : 502);
+      result = await callAI(SYSTEM_PROMPT, `Extraits disponibles :\n\n${context}\n\nQuestion de l'agent : ${question}`, 2048);
+    } catch (e) {
+      return json({ error: `Échec de la génération de la réponse. ${(e as Error).message}`.slice(0, 500) }, 502);
     }
-
-    if (!claudeRes.ok) {
-      const detail = await claudeRes.text().catch(() => "");
-      console.error("Anthropic error", claudeRes.status, detail);
-      let detailMsg = detail;
-      try { detailMsg = JSON.parse(detail)?.error?.message ?? detail; } catch { /* garde le texte brut */ }
-      return json({ error: `Échec de la génération de la réponse (Claude ${claudeRes.status}) : ${detailMsg}`.slice(0, 500) }, 502);
-    }
-
-    const claudeData = await claudeRes.json();
-    const textBlock = (claudeData.content ?? []).find((b: any) => b.type === "text");
-    const reponse = textBlock?.text ?? "Réponse indisponible.";
 
     const sources = chunks.map((c: any) => ({ id: c.id, titre: c.source_titre, reference: c.reference, categorie: c.source_categorie }));
 
-    return json({ reponse, sources });
+    return json({ reponse: result.text, sources, provider: result.provider });
   } catch (e) {
     return json({ error: String((e as Error)?.message ?? e) }, 500);
   }

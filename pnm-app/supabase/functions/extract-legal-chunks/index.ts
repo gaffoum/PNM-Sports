@@ -1,12 +1,17 @@
 // Edge Function : extract-legal-chunks
 // Brique commerciale « Assistant IA droit du sport » (pack Data & Scouting).
-// Reçoit un PDF (règlement, texte de loi...) en base64 et demande à Claude
-// de le découper en extraits citables (référence + contenu), pour
-// alimenter la base documentaire (legal_chunks) utilisée par l'assistant.
+// Reçoit un PDF (règlement, texte de loi...) en base64 et demande à l'IA de
+// le découper en extraits citables (référence + contenu), pour alimenter la
+// base documentaire (legal_chunks) utilisée par l'assistant.
 //
-// Variable d'environnement à définir (Supabase → Project Settings → Edge
+// Variables d'environnement à définir (Supabase → Project Settings → Edge
 // Functions → Secrets) :
-//   ANTHROPIC_API_KEY  (déjà requis pour le générateur de documents)
+//   ANTHROPIC_API_KEY  (fournisseur principal)
+//   GEMINI_API_KEY     (optionnel — repli automatique si Anthropic échoue :
+//                        crédit épuisé, timeout, erreur...)
+//
+// Note : l'API Claude limite un document à 600 pages par requête ; au-delà,
+// scinde le PDF en plusieurs fichiers avant import.
 //
 // Déploiement : supabase functions deploy extract-legal-chunks
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -30,6 +35,102 @@ rester exact, il sera cité comme source juridique). Pour chaque extrait :
 Réponds UNIQUEMENT avec un JSON valide de cette forme, sans texte autour :
 {"extraits": [{"reference": "...", "contenu": "..."}]}`;
 
+async function callAnthropic(system: string, text: string, pdfBase64: string, maxTokens: number, apiKey: string, timeoutMs: number): Promise<string> {
+  let res: Response;
+  try {
+    res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-5",
+        max_tokens: maxTokens,
+        system,
+        messages: [{
+          role: "user",
+          content: [
+            { type: "document", source: { type: "base64", media_type: "application/pdf", data: pdfBase64 } },
+            { type: "text", text },
+          ],
+        }],
+      }),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch (e) {
+    const isTimeout = (e as Error)?.name === "TimeoutError" || (e as Error)?.name === "AbortError";
+    throw new Error(isTimeout ? "délai dépassé" : String((e as Error)?.message ?? e));
+  }
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    let msg = detail;
+    try { msg = JSON.parse(detail)?.error?.message ?? detail; } catch { /* garde le texte brut */ }
+    throw new Error(`HTTP ${res.status} — ${msg}`.slice(0, 400));
+  }
+  const data = await res.json();
+  const block = (data.content ?? []).find((b: any) => b.type === "text");
+  if (!block) throw new Error("réponse sans contenu texte");
+  return block.text;
+}
+
+async function callGemini(system: string, text: string, pdfBase64: string, maxTokens: number, apiKey: string, timeoutMs: number): Promise<string> {
+  const model = "gemini-2.0-flash";
+  let res: Response;
+  try {
+    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [{
+          role: "user",
+          parts: [
+            { inlineData: { mimeType: "application/pdf", data: pdfBase64 } },
+            { text },
+          ],
+        }],
+        generationConfig: { maxOutputTokens: maxTokens },
+      }),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch (e) {
+    const isTimeout = (e as Error)?.name === "TimeoutError" || (e as Error)?.name === "AbortError";
+    throw new Error(isTimeout ? "délai dépassé" : String((e as Error)?.message ?? e));
+  }
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    let msg = detail;
+    try { msg = JSON.parse(detail)?.error?.message ?? detail; } catch { /* garde le texte brut */ }
+    throw new Error(`HTTP ${res.status} — ${msg}`.slice(0, 400));
+  }
+  const data = await res.json();
+  const t = (data?.candidates?.[0]?.content?.parts ?? []).map((p: any) => p.text ?? "").join("");
+  if (!t) throw new Error("réponse sans contenu texte");
+  return t;
+}
+
+async function callAI(system: string, text: string, pdfBase64: string, maxTokens: number): Promise<{ text: string; provider: string }> {
+  const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+  const geminiKey = Deno.env.get("GEMINI_API_KEY");
+  const errors: string[] = [];
+
+  if (anthropicKey) {
+    try {
+      return { text: await callAnthropic(system, text, pdfBase64, maxTokens, anthropicKey, 50_000), provider: "anthropic" };
+    } catch (e) {
+      console.error("Anthropic failed:", e);
+      errors.push(`Anthropic — ${(e as Error).message}`);
+    }
+  }
+  if (geminiKey) {
+    try {
+      return { text: await callGemini(system, text, pdfBase64, maxTokens, geminiKey, 50_000), provider: "gemini" };
+    } catch (e) {
+      console.error("Gemini failed:", e);
+      errors.push(`Gemini — ${(e as Error).message}`);
+    }
+  }
+  throw new Error(errors.length ? errors.join(" | ") : "Aucun fournisseur IA configuré (ANTHROPIC_API_KEY / GEMINI_API_KEY manquants).");
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "Méthode non autorisée" }, 405);
@@ -47,65 +148,23 @@ Deno.serve(async (req) => {
     const { pdfBase64 } = await req.json();
     if (!pdfBase64) return json({ error: "Fichier PDF requis" }, 400);
 
-    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!apiKey) return json({ error: "Service IA non configuré (ANTHROPIC_API_KEY manquant)." }, 500);
-
-    let claudeRes: Response;
+    let result;
     try {
-      claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-5",
-          max_tokens: 8192,
-          system: SYSTEM_PROMPT,
-          messages: [
-            {
-              role: "user",
-              content: [
-                { type: "document", source: { type: "base64", media_type: "application/pdf", data: pdfBase64 } },
-                { type: "text", text: "Découpe ce document en extraits citables et renvoie le JSON demandé." },
-              ],
-            },
-          ],
-        }),
-        signal: AbortSignal.timeout(50_000),
-      });
-    } catch (fetchErr) {
-      const isTimeout = (fetchErr as Error)?.name === "TimeoutError" || (fetchErr as Error)?.name === "AbortError";
-      return json({
-        error: isTimeout
-          ? "L'analyse a dépassé le délai autorisé (50s). Essaie avec un document plus court, ou découpe-le en plusieurs PDF plus petits."
-          : `Échec de l'appel à l'IA : ${String((fetchErr as Error)?.message ?? fetchErr)}`,
-      }, isTimeout ? 504 : 502);
+      result = await callAI(SYSTEM_PROMPT, "Découpe ce document en extraits citables et renvoie le JSON demandé.", pdfBase64, 8192);
+    } catch (e) {
+      return json({ error: `Échec de l'analyse du document. ${(e as Error).message}`.slice(0, 500) }, 502);
     }
-
-    if (!claudeRes.ok) {
-      const detail = await claudeRes.text().catch(() => "");
-      console.error("Anthropic error", claudeRes.status, detail);
-      let detailMsg = detail;
-      try { detailMsg = JSON.parse(detail)?.error?.message ?? detail; } catch { /* garde le texte brut */ }
-      return json({ error: `Échec de l'analyse du document (Claude ${claudeRes.status}) : ${detailMsg}`.slice(0, 500) }, 502);
-    }
-
-    const claudeData = await claudeRes.json();
-    const textBlock = (claudeData.content ?? []).find((b: any) => b.type === "text");
-    if (!textBlock) return json({ error: "Réponse IA invalide (pas de bloc texte)." }, 502);
 
     let parsed;
     try {
-      const jsonMatch = textBlock.text.match(/\{[\s\S]*\}/);
-      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : textBlock.text);
+      const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : result.text);
     } catch {
-      console.error("JSON parse failed, raw text:", textBlock.text);
-      return json({ error: `Impossible d'interpréter la réponse de l'IA. Début de la réponse : ${textBlock.text.slice(0, 300)}` }, 502);
+      console.error("JSON parse failed, raw text:", result.text);
+      return json({ error: `Impossible d'interpréter la réponse de l'IA (${result.provider}). Début : ${result.text.slice(0, 300)}` }, 502);
     }
 
-    return json({ extraits: parsed.extraits ?? [] });
+    return json({ extraits: parsed.extraits ?? [], provider: result.provider });
   } catch (e) {
     return json({ error: String((e as Error)?.message ?? e) }, 500);
   }
