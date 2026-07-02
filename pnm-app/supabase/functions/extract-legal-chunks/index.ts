@@ -76,19 +76,22 @@ Deno.serve(async (req) => {
     if (!claudeRes.ok) {
       const detail = await claudeRes.text().catch(() => "");
       console.error("Anthropic error", claudeRes.status, detail);
-      return json({ error: "Échec de l'analyse du document." }, 502);
+      let detailMsg = detail;
+      try { detailMsg = JSON.parse(detail)?.error?.message ?? detail; } catch { /* garde le texte brut */ }
+      return json({ error: `Échec de l'analyse du document (Claude ${claudeRes.status}) : ${detailMsg}`.slice(0, 500) }, 502);
     }
 
     const claudeData = await claudeRes.json();
     const textBlock = (claudeData.content ?? []).find((b: any) => b.type === "text");
-    if (!textBlock) return json({ error: "Réponse IA invalide." }, 502);
+    if (!textBlock) return json({ error: "Réponse IA invalide (pas de bloc texte)." }, 502);
 
     let parsed;
     try {
       const jsonMatch = textBlock.text.match(/\{[\s\S]*\}/);
       parsed = JSON.parse(jsonMatch ? jsonMatch[0] : textBlock.text);
     } catch {
-      return json({ error: "Impossible d'interpréter la réponse de l'IA." }, 502);
+      console.error("JSON parse failed, raw text:", textBlock.text);
+      return json({ error: `Impossible d'interpréter la réponse de l'IA. Début de la réponse : ${textBlock.text.slice(0, 300)}` }, 502);
     }
 
     return json({ extraits: parsed.extraits ?? [] });

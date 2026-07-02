@@ -92,7 +92,9 @@ Deno.serve(async (req) => {
     if (!claudeRes.ok) {
       const detail = await claudeRes.text().catch(() => "");
       console.error("Anthropic error", claudeRes.status, detail);
-      return json({ error: "Échec de la génération de la réponse." }, 502);
+      let detailMsg = detail;
+      try { detailMsg = JSON.parse(detail)?.error?.message ?? detail; } catch { /* garde le texte brut */ }
+      return json({ error: `Échec de la génération de la réponse (Claude ${claudeRes.status}) : ${detailMsg}`.slice(0, 500) }, 502);
     }
 
     const claudeData = await claudeRes.json();
