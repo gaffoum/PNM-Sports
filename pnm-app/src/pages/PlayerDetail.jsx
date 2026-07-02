@@ -9,6 +9,7 @@ import { listInteractionsByPlayer } from "../hooks/usePlayerInteractions";
 import { listAppointmentsByPlayer } from "../hooks/useAppointments";
 import { listContractsByPlayer } from "../hooks/useContracts";
 import { listEvaluationsByPlayer } from "../hooks/useEvaluations";
+import { listVideosByPlayer } from "../hooks/usePlayerVideos";
 import { useAuth } from "../hooks/useAuth";
 import { useConfirm } from "../contexts/ConfirmContext";
 import { useFeatures } from "../hooks/useFeatures";
@@ -23,6 +24,7 @@ import InteractionsPanel from "../components/players/InteractionsPanel";
 import AppointmentsPanel from "../components/players/AppointmentsPanel";
 import ContractsPanel from "../components/players/ContractsPanel";
 import ScoutingPanel from "../components/players/ScoutingPanel";
+import VideosPanel from "../components/players/VideosPanel";
 import PlayerPdf from "../components/players/PlayerPdf";
 
 function Info({ label, value }) {
@@ -49,12 +51,15 @@ export default function PlayerDetail() {
   const [appointments, setAppointments] = useState([]);
   const [contracts, setContracts] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
+  const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const hasHistorique = hasFeature("placement_historique");
   const hasAgenda = hasFeature("placement_agenda");
   const hasContrats = hasFeature("placement_contrats");
   const hasScouting = hasFeature("data_scouting_interne");
   const hasRadar = hasFeature("data_radar_reel");
+  const hasVideos = hasFeature("media_videos");
+  const hasBook = hasFeature("media_book");
   const [editing, setEditing] = useState(false);
   const [cropSrc, setCropSrc] = useState(null);
   const [pdfBusy, setPdfBusy] = useState(false);
@@ -67,15 +72,16 @@ export default function PlayerDetail() {
     (async () => {
       setLoading(true);
       try {
-        const [p, s, d, ints, appts, contr, evals] = await Promise.all([
+        const [p, s, d, ints, appts, contr, evals, vids] = await Promise.all([
           getPlayerById(id), getPlayerStats(id), getPlayerDocuments(id),
           hasHistorique ? listInteractionsByPlayer(id) : Promise.resolve([]),
           hasAgenda ? listAppointmentsByPlayer(id) : Promise.resolve([]),
           hasContrats ? listContractsByPlayer(id) : Promise.resolve([]),
           hasScouting ? listEvaluationsByPlayer(id) : Promise.resolve([]),
+          hasVideos ? listVideosByPlayer(id) : Promise.resolve([]),
         ]);
         if (!active) return;
-        setPlayer(p); setStats(s); setDocs(d); setInteractions(ints); setAppointments(appts); setContracts(contr); setEvaluations(evals);
+        setPlayer(p); setStats(s); setDocs(d); setInteractions(ints); setAppointments(appts); setContracts(contr); setEvaluations(evals); setVideos(vids);
       } catch (e) {
         toast.error(e.message);
         nav("/players");
@@ -84,7 +90,7 @@ export default function PlayerDetail() {
       }
     })();
     return () => { active = false; };
-  }, [id, nav, hasHistorique, hasAgenda, hasContrats, hasScouting]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [id, nav, hasHistorique, hasAgenda, hasContrats, hasScouting, hasVideos]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function onPickPhoto(e) {
     const f = e.target.files?.[0]; if (!f) return;
@@ -181,6 +187,22 @@ export default function PlayerDetail() {
     toast.success("Export RGPD téléchargé");
   }
 
+  async function exportBook() {
+    setPdfBusy(true);
+    try {
+      const blob = await pdf(<PlayerPdf player={player} stats={stats} evaluation={hasRadar ? evaluations[0] : null} book videos={videos} docs={docs} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `pnm-book-${player.nom}-${player.prenom}.pdf`; a.click();
+      URL.revokeObjectURL(url);
+      logActivity(agent.id, player.id, "export_book");
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setPdfBusy(false);
+    }
+  }
+
   async function sendPdfEmail() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sendEmail)) return toast.error("Adresse e-mail invalide.");
     setSendBusy(true);
@@ -272,6 +294,9 @@ export default function PlayerDetail() {
             </select>
             <button onClick={() => setEditing(true)} className="btn btn-outline"><Pencil className="w-4 h-4" />Modifier</button>
             <button onClick={exportPdf} className="btn btn-outline" disabled={pdfBusy}><FileText className="w-4 h-4" />{pdfBusy ? "PDF…" : "Exporter en PDF"}</button>
+            {hasBook && (
+              <button onClick={exportBook} className="btn btn-outline" disabled={pdfBusy}><FileText className="w-4 h-4" />{pdfBusy ? "Book…" : "Générer le book"}</button>
+            )}
             {hasFeature("comm_envoi_pdf") && (
               <button onClick={() => setSendOpen((v) => !v)} className="btn btn-outline">
                 <Mail className="w-4 h-4" />Envoyer par email
@@ -336,6 +361,7 @@ export default function PlayerDetail() {
 
       <StatsTable playerId={player.id} stats={stats} onChange={setStats} />
       <DocumentsList playerId={player.id} documents={docs} onChange={setDocs} />
+      {hasVideos && <VideosPanel playerId={player.id} videos={videos} onChange={setVideos} />}
       {hasScouting && <ScoutingPanel playerId={player.id} evaluations={evaluations} onChange={setEvaluations} />}
       {hasContrats && <ContractsPanel playerId={player.id} contracts={contracts} onChange={setContracts} />}
       {hasAgenda && <AppointmentsPanel playerId={player.id} player={player} appointments={appointments} onChange={setAppointments} />}
