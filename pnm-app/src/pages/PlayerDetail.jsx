@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { pdf } from "@react-pdf/renderer";
-import { Pencil, Trash2, Download, Upload, ArrowLeft, FileText, Mail } from "lucide-react";
+import { Pencil, Trash2, Download, Upload, ArrowLeft, FileText, Mail, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "../lib/supabaseClient";
 import { getPlayerById, getPlayerStats, getPlayerDocuments } from "../hooks/usePlayers";
@@ -161,6 +161,26 @@ export default function PlayerDetail() {
     }
   }
 
+  function exportRgpdJson() {
+    const payload = {
+      exporte_le: new Date().toISOString(),
+      joueur: player,
+      statistiques: stats,
+      documents: docs.map((d) => ({ nom: d.nom, type: d.type, uploaded_at: d.uploaded_at })),
+      interactions,
+      rendez_vous: appointments,
+      contrats: contracts,
+      evaluations,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `rgpd-${player.nom}-${player.prenom}.json`; a.click();
+    URL.revokeObjectURL(url);
+    logActivity(agent.id, player.id, "export_rgpd_json");
+    toast.success("Export RGPD téléchargé");
+  }
+
   async function sendPdfEmail() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sendEmail)) return toast.error("Adresse e-mail invalide.");
     setSendBusy(true);
@@ -255,6 +275,11 @@ export default function PlayerDetail() {
             {hasFeature("comm_envoi_pdf") && (
               <button onClick={() => setSendOpen((v) => !v)} className="btn btn-outline">
                 <Mail className="w-4 h-4" />Envoyer par email
+              </button>
+            )}
+            {hasFeature("secu_rgpd") && (
+              <button onClick={exportRgpdJson} className="btn btn-outline" title="Droit d'accès RGPD : export complet des données">
+                <ShieldCheck className="w-4 h-4" />Export RGPD
               </button>
             )}
             <button onClick={deletePlayer} className="btn btn-danger"><Trash2 className="w-4 h-4" />Supprimer</button>

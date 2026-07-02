@@ -19,7 +19,8 @@
     { "source": "/agenda", "destination": "/agent/index.html" },
     { "source": "/pipeline", "destination": "/agent/index.html" },
     { "source": "/commissions", "destination": "/agent/index.html" },
-    { "source": "/audit", "destination": "/agent/index.html" }
+    { "source": "/audit", "destination": "/agent/index.html" },
+    { "source": "/rgpd", "destination": "/agent/index.html" }
   ],
   "headers": [
     {

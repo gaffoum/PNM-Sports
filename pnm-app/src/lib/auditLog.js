@@ -6,6 +6,7 @@ export const AUDIT_TABLES = [
   { key: "player_contracts", label: "Contrats" },
   { key: "agents", label: "Agents" },
   { key: "features", label: "Briques" },
+  { key: "rgpd_requests", label: "Demandes RGPD" },
 ];
 
 export const AUDIT_ACTIONS = [
