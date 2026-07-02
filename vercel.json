@@ -21,7 +21,8 @@
     { "source": "/commissions", "destination": "/agent/index.html" },
     { "source": "/audit", "destination": "/agent/index.html" },
     { "source": "/rgpd", "destination": "/agent/index.html" },
-    { "source": "/portefeuille", "destination": "/agent/index.html" }
+    { "source": "/portefeuille", "destination": "/agent/index.html" },
+    { "source": "/rapports", "destination": "/agent/index.html" }
   ],
   "headers": [
     {
