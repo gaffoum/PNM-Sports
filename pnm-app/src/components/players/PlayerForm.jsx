@@ -9,6 +9,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { useFeatures } from "../../hooks/useFeatures";
 import { STEPS, STEP_KEYS, DEFAULT_STEP, statutForStep } from "../../lib/recruitment";
 import { CLUBS } from "../../lib/clubs";
+import AutocompleteInput from "../common/AutocompleteInput";
 
 const schema = z.object({
   nom: z.string().min(1, "Requis"),
@@ -50,7 +51,7 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
   const [agents, setAgents] = useState([]);
   const [saving, setSaving] = useState(false);
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+  const { register, handleSubmit, watch, setValue, formState: { errors }, reset } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       recruitment_step: DEFAULT_STEP,
@@ -112,9 +113,6 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <datalist id="clubs-list">
-        {CLUBS.map((c) => <option key={c} value={c} />)}
-      </datalist>
       <section className="panel p-5 space-y-4">
         <h3 className="text-sm uppercase tracking-wider text-cyan-bright">Identité</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -157,8 +155,26 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
       <section className="panel p-5 space-y-4">
         <h3 className="text-sm uppercase tracking-wider text-cyan-bright">Carrière</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Field name="club_actuel" label="Club actuel" list="clubs-list" placeholder="Choisir ou saisir…" />
-          <Field name="club_precedent" label="Club précédent" list="clubs-list" placeholder="Choisir ou saisir…" />
+          <div>
+            <label className="label">Club actuel</label>
+            <AutocompleteInput
+              options={CLUBS}
+              value={watch("club_actuel") ?? ""}
+              onChange={(v) => setValue("club_actuel", v, { shouldValidate: true, shouldDirty: true })}
+              placeholder="Choisir ou saisir…"
+            />
+            {errors.club_actuel && <p className="text-[11px] text-red-300 mt-1">{errors.club_actuel.message}</p>}
+          </div>
+          <div>
+            <label className="label">Club précédent</label>
+            <AutocompleteInput
+              options={CLUBS}
+              value={watch("club_precedent") ?? ""}
+              onChange={(v) => setValue("club_precedent", v, { shouldValidate: true, shouldDirty: true })}
+              placeholder="Choisir ou saisir…"
+            />
+            {errors.club_precedent && <p className="text-[11px] text-red-300 mt-1">{errors.club_precedent.message}</p>}
+          </div>
           <Field name="fin_contrat" label="Fin de contrat" type="date" />
           <Field name="valeur_estimee_eur" label="Valeur estimée (€)" type="number" />
         </div>
