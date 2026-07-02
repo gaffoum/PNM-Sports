@@ -6,19 +6,19 @@ import { useFeatures } from "../../hooks/useFeatures";
 import { isOwner } from "../../lib/ownership";
 import NotificationBell from "./NotificationBell";
 
-function NavItem({ to, icon: Icon, children, end, onClick }) {
+function NavItem({ to, icon: Icon, children, end, onClick, sub }) {
   return (
     <NavLink
       to={to}
       end={end}
       onClick={onClick}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+        `flex items-center gap-3 rounded-lg text-sm transition-colors ${sub ? "pl-9 pr-3 py-2 text-[13px]" : "px-3 py-2.5"} ${
           isActive ? "bg-cyan-bright/10 text-cyan-bright" : "text-ink-dim hover:text-ink hover:bg-line/30"
         }`
       }
     >
-      <Icon className="w-4 h-4 shrink-0" />
+      <Icon className={sub ? "w-3.5 h-3.5 shrink-0" : "w-4 h-4 shrink-0"} />
       <span>{children}</span>
     </NavLink>
   );
@@ -45,6 +45,7 @@ function SidebarContent({ agent, isAdmin, hasFeature, onNavigate, onSignOut, goP
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         <NavItem to="/dashboard" icon={LayoutDashboard} end onClick={onNavigate}>Tableau de bord</NavItem>
         <NavItem to="/players" icon={Users} onClick={onNavigate}>Joueurs</NavItem>
+        <NavItem to="/players/new" icon={UserPlus} onClick={onNavigate} sub>Ajouter</NavItem>
         <NavItem to="/recrutement" icon={LayoutGrid} onClick={onNavigate}>Prospection</NavItem>
         {hasFeature("placement_clubs") && <NavItem to="/clubs" icon={Building2} onClick={onNavigate}>Clubs</NavItem>}
         {hasFeature("placement_besoins_clubs") && <NavItem to="/besoins-clubs" icon={ClipboardList} onClick={onNavigate}>Besoins clubs</NavItem>}
@@ -52,7 +53,6 @@ function SidebarContent({ agent, isAdmin, hasFeature, onNavigate, onSignOut, goP
         {hasFeature("placement_pipeline") && <NavItem to="/pipeline" icon={GitMerge} onClick={onNavigate}>Pipeline</NavItem>}
         {hasFeature("placement_commissions") && <NavItem to="/commissions" icon={Euro} onClick={onNavigate}>Commissions</NavItem>}
         {hasFeature("pilotage_portefeuille") && <NavItem to="/portefeuille" icon={Wallet} onClick={onNavigate}>Portefeuille</NavItem>}
-        <NavItem to="/players/new" icon={UserPlus} onClick={onNavigate}>Ajouter</NavItem>
         {isAdmin && <NavItem to="/agents" icon={ShieldCheck} onClick={onNavigate}>Agents</NavItem>}
         {isAdmin && hasFeature("secu_audit") && <NavItem to="/audit" icon={ShieldAlert} onClick={onNavigate}>Journal d'audit</NavItem>}
         {isAdmin && hasFeature("secu_rgpd") && <NavItem to="/rgpd" icon={ScrollText} onClick={onNavigate}>Demandes RGPD</NavItem>}
