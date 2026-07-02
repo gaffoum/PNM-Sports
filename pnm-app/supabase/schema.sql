@@ -345,8 +345,8 @@ create policy "clubs_select" on public.clubs
 drop policy if exists "clubs_write" on public.clubs;
 create policy "clubs_write" on public.clubs
   for all to authenticated
-  using (public.is_admin() or public.has_perm('edit_players'))
-  with check (public.is_admin() or public.has_perm('edit_players'));
+  using (public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_clubs'))
+  with check (public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_clubs'));
 
 create table if not exists public.club_contacts (
   id uuid primary key default gen_random_uuid(),
@@ -381,8 +381,8 @@ create policy "club_contacts_select" on public.club_contacts
 drop policy if exists "club_contacts_write" on public.club_contacts;
 create policy "club_contacts_write" on public.club_contacts
   for all to authenticated
-  using (public.is_admin() or public.has_perm('edit_players'))
-  with check (public.is_admin() or public.has_perm('edit_players'));
+  using (public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_clubs'))
+  with check (public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_clubs'));
 
 drop policy if exists "club_activity_select" on public.club_activity;
 create policy "club_activity_select" on public.club_activity
@@ -391,8 +391,8 @@ create policy "club_activity_select" on public.club_activity
 drop policy if exists "club_activity_write" on public.club_activity;
 create policy "club_activity_write" on public.club_activity
   for all to authenticated
-  using (public.is_admin() or public.has_perm('edit_players'))
-  with check (public.is_admin() or public.has_perm('edit_players'));
+  using (public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_clubs'))
+  with check (public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_clubs'));
 
 -- =====================================================================
 -- TABLE: club_needs (brique "Besoins clubs") — demandes de recrutement
@@ -426,8 +426,8 @@ create policy "club_needs_select" on public.club_needs
 drop policy if exists "club_needs_write" on public.club_needs;
 create policy "club_needs_write" on public.club_needs
   for all to authenticated
-  using (public.is_admin() or public.has_perm('edit_players'))
-  with check (public.is_admin() or public.has_perm('edit_players'));
+  using (public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_clubs'))
+  with check (public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_clubs'));
 
 -- =====================================================================
 -- TABLE: player_interactions (brique "Historique d'interactions")
@@ -461,13 +461,13 @@ drop policy if exists "player_interactions_write" on public.player_interactions;
 create policy "player_interactions_write" on public.player_interactions
   for all to authenticated
   using (
-    public.is_admin() or public.has_perm('edit_players') or exists (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_agenda') or exists (
       select 1 from public.players p
       where p.id = player_interactions.player_id and p.agent_referent = auth.uid()
     )
   )
   with check (
-    public.is_admin() or public.has_perm('edit_players') or exists (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_agenda') or exists (
       select 1 from public.players p
       where p.id = player_interactions.player_id and p.agent_referent = auth.uid()
     )
@@ -513,13 +513,13 @@ drop policy if exists "appointments_write" on public.appointments;
 create policy "appointments_write" on public.appointments
   for all to authenticated
   using (
-    public.is_admin() or public.has_perm('edit_players') or exists (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_agenda') or exists (
       select 1 from public.players p
       where p.id = appointments.player_id and p.agent_referent = auth.uid()
     )
   )
   with check (
-    public.is_admin() or public.has_perm('edit_players') or exists (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_agenda') or exists (
       select 1 from public.players p
       where p.id = appointments.player_id and p.agent_referent = auth.uid()
     )
@@ -567,13 +567,13 @@ drop policy if exists "player_deals_write" on public.player_deals;
 create policy "player_deals_write" on public.player_deals
   for all to authenticated
   using (
-    public.is_admin() or public.has_perm('edit_players') or exists (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_pipeline') or exists (
       select 1 from public.players p
       where p.id = player_deals.player_id and p.agent_referent = auth.uid()
     )
   )
   with check (
-    public.is_admin() or public.has_perm('edit_players') or exists (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_pipeline') or exists (
       select 1 from public.players p
       where p.id = player_deals.player_id and p.agent_referent = auth.uid()
     )
@@ -617,13 +617,13 @@ drop policy if exists "deal_commissions_write" on public.deal_commissions;
 create policy "deal_commissions_write" on public.deal_commissions
   for all to authenticated
   using (
-    public.is_admin() or public.has_perm('edit_players') or exists (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_pipeline') or exists (
       select 1 from public.player_deals d join public.players p on p.id = d.player_id
       where d.id = deal_commissions.deal_id and p.agent_referent = auth.uid()
     )
   )
   with check (
-    public.is_admin() or public.has_perm('edit_players') or exists (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_pipeline') or exists (
       select 1 from public.player_deals d join public.players p on p.id = d.player_id
       where d.id = deal_commissions.deal_id and p.agent_referent = auth.uid()
     )
@@ -669,13 +669,13 @@ drop policy if exists "player_contracts_write" on public.player_contracts;
 create policy "player_contracts_write" on public.player_contracts
   for all to authenticated
   using (
-    public.is_admin() or public.has_perm('edit_players') or exists (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_scouting') or exists (
       select 1 from public.players p
       where p.id = player_contracts.player_id and p.agent_referent = auth.uid()
     )
   )
   with check (
-    public.is_admin() or public.has_perm('edit_players') or exists (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_scouting') or exists (
       select 1 from public.players p
       where p.id = player_contracts.player_id and p.agent_referent = auth.uid()
     )
@@ -719,13 +719,13 @@ drop policy if exists "player_evaluations_write" on public.player_evaluations;
 create policy "player_evaluations_write" on public.player_evaluations
   for all to authenticated
   using (
-    public.is_admin() or public.has_perm('edit_players') or exists (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_scouting') or exists (
       select 1 from public.players p
       where p.id = player_evaluations.player_id and p.agent_referent = auth.uid()
     )
   )
   with check (
-    public.is_admin() or public.has_perm('edit_players') or exists (
+    public.is_admin() or public.has_perm('edit_players') or public.has_perm('manage_scouting') or exists (
       select 1 from public.players p
       where p.id = player_evaluations.player_id and p.agent_referent = auth.uid()
     )
