@@ -25,6 +25,7 @@ import Pipeline from "./pages/Pipeline";
 import Commissions from "./pages/Commissions";
 import AuditLog from "./pages/AuditLog";
 import RgpdRequests from "./pages/RgpdRequests";
+import Portfolio from "./pages/Portfolio";
 import Profile from "./pages/Profile";
 
 export default function App() {
@@ -59,6 +60,7 @@ export default function App() {
             <Route path="/agents" element={<ProtectedRoute requireAdmin><Agents /></ProtectedRoute>} />
             <Route path="/audit" element={<ProtectedRoute requireAdmin><FeatureGate feature="secu_audit"><AuditLog /></FeatureGate></ProtectedRoute>} />
             <Route path="/rgpd" element={<ProtectedRoute requireAdmin><FeatureGate feature="secu_rgpd"><RgpdRequests /></FeatureGate></ProtectedRoute>} />
+            <Route path="/portefeuille" element={<FeatureGate feature="pilotage_portefeuille"><Portfolio /></FeatureGate>} />
             <Route path="/features" element={<ProtectedRoute requireAdmin><OwnerRoute><Features /></OwnerRoute></ProtectedRoute>} />
             <Route path="/profile" element={<Profile />} />
           </Route>
