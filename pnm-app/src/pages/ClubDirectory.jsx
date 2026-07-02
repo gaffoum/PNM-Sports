@@ -7,6 +7,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useConfirm } from "../contexts/ConfirmContext";
 import { COUNTRIES } from "../lib/countries";
 import AutocompleteInput from "../components/common/AutocompleteInput";
+import ViewToggle from "../components/common/ViewToggle";
 
 export default function ClubDirectory() {
   const nav = useNavigate();
@@ -20,6 +21,7 @@ export default function ClubDirectory() {
   const [newClub, setNewClub] = useState({ nom: "", pays: "" });
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ nom: "", pays: "" });
+  const [view, setView] = useState("cards");
 
   async function load() {
     setLoading(true);
@@ -130,11 +132,12 @@ export default function ClubDirectory() {
           value={country}
           onChange={setCountry}
         />
+        <ViewToggle value={view} onChange={setView} />
       </div>
 
       {loading ? (
         <div className="text-ink-dim">Chargement…</div>
-      ) : (
+      ) : view === "cards" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map((c) => (
             <div key={c.id} className="panel p-4">
@@ -174,6 +177,58 @@ export default function ClubDirectory() {
             </div>
           ))}
           {filtered.length === 0 && <p className="text-ink-dim col-span-full">Aucun club trouvé.</p>}
+        </div>
+      ) : (
+        <div className="panel overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-line text-left text-[11px] uppercase tracking-wider text-ink-muted">
+                <th className="px-4 py-3 font-semibold whitespace-nowrap">Club</th>
+                <th className="px-4 py-3 font-semibold whitespace-nowrap">Pays</th>
+                <th className="px-4 py-3 font-semibold whitespace-nowrap">Joueurs</th>
+                <th className="px-4 py-3 font-semibold whitespace-nowrap">Contacts</th>
+                {canEdit && <th className="px-4 py-3 font-semibold whitespace-nowrap"></th>}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 && (
+                <tr><td colSpan={canEdit ? 5 : 4} className="px-4 py-10 text-center text-ink-dim">Aucun club trouvé.</td></tr>
+              )}
+              {filtered.map((c) => (
+                editingId === c.id ? (
+                  <tr key={c.id} className="border-b border-line/60">
+                    <td colSpan={canEdit ? 5 : 4} className="px-4 py-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <input className="input py-1.5 w-56" value={editForm.nom} onChange={(e) => setEditForm({ ...editForm, nom: e.target.value })} />
+                        <AutocompleteInput className="w-48" placeholder="Pays" options={COUNTRIES} value={editForm.pays} onChange={(v) => setEditForm({ ...editForm, pays: v })} />
+                        <button onClick={() => saveEdit(c)} className="btn btn-primary px-2 py-1"><Check className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => setEditingId(null)} className="btn btn-ghost px-2 py-1"><X className="w-3.5 h-3.5" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr
+                    key={c.id}
+                    onClick={() => goToClub(c.nom)}
+                    className="border-b border-line/60 hover:bg-cyan-bright/5 cursor-pointer transition-colors"
+                  >
+                    <td className="px-4 py-2.5 font-semibold whitespace-nowrap">{c.nom}</td>
+                    <td className="px-4 py-2.5 whitespace-nowrap">{c.pays || "—"}</td>
+                    <td className="px-4 py-2.5 whitespace-nowrap">{c.playerCount}</td>
+                    <td className="px-4 py-2.5 whitespace-nowrap">{c.contactCount}</td>
+                    {canEdit && (
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        <div className="flex gap-1 justify-end">
+                          <button onClick={(e) => { e.stopPropagation(); startEdit(c); }} className="btn btn-ghost p-1.5" title="Modifier"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button onClick={(e) => { e.stopPropagation(); removeClub(c); }} className="btn btn-ghost p-1.5" title="Supprimer"><Trash2 className="w-3.5 h-3.5 text-red-300" /></button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                )
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

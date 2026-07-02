@@ -10,6 +10,7 @@ import { formatDateFr } from "../lib/utils";
 import { STATUTS, statutLabel, statutBadgeClass, CRITERE_SUGGESTIONS, POSTE_SUGGESTIONS } from "../lib/clubNeeds";
 import AutocompleteInput from "../components/common/AutocompleteInput";
 import ClubNeedForm from "../components/clubs/ClubNeedForm";
+import ViewToggle from "../components/common/ViewToggle";
 
 const EMPTY_FORM = { clubNom: "", poste: "", criteres: [], description: "", statut: "ouvert" };
 
@@ -33,6 +34,7 @@ export default function ClubNeeds() {
   const [filterPoste, setFilterPoste] = useState("");
   const [filterCritere, setFilterCritere] = useState("");
   const [filterStatut, setFilterStatut] = useState("");
+  const [view, setView] = useState("cards");
 
   async function load() {
     setLoading(true);
@@ -159,11 +161,12 @@ export default function ClubNeeds() {
           <option value="">Tous les statuts</option>
           {STATUTS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
         </select>
+        <ViewToggle value={view} onChange={setView} />
       </div>
 
       {loading ? (
         <div className="text-ink-dim">Chargement…</div>
-      ) : (
+      ) : view === "cards" ? (
         <div className="space-y-3">
           {filtered.map((n) => (
             <div key={n.id} className="panel p-4">
@@ -209,6 +212,72 @@ export default function ClubNeeds() {
             </div>
           ))}
           {filtered.length === 0 && <p className="text-ink-dim">Aucun besoin trouvé.</p>}
+        </div>
+      ) : (
+        <div className="panel overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-line text-left text-[11px] uppercase tracking-wider text-ink-muted">
+                <th className="px-4 py-3 font-semibold whitespace-nowrap">Club</th>
+                <th className="px-4 py-3 font-semibold whitespace-nowrap">Poste</th>
+                <th className="px-4 py-3 font-semibold whitespace-nowrap">Critères</th>
+                <th className="px-4 py-3 font-semibold whitespace-nowrap">Statut</th>
+                <th className="px-4 py-3 font-semibold whitespace-nowrap">Date</th>
+                {canEdit && <th className="px-4 py-3 font-semibold whitespace-nowrap"></th>}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 && (
+                <tr><td colSpan={canEdit ? 6 : 5} className="px-4 py-10 text-center text-ink-dim">Aucun besoin trouvé.</td></tr>
+              )}
+              {filtered.map((n) => (
+                editingId === n.id ? (
+                  <tr key={n.id} className="border-b border-line/60">
+                    <td colSpan={canEdit ? 6 : 5} className="px-4 py-3">
+                      <ClubNeedForm
+                        form={editForm}
+                        setForm={setEditForm}
+                        clubNames={clubNames}
+                        disableClub
+                        submitLabel="Enregistrer"
+                        onSubmit={submitEdit}
+                        onCancel={() => setEditingId(null)}
+                        busy={savingEdit}
+                      />
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={n.id} className="border-b border-line/60 hover:bg-cyan-bright/5 transition-colors">
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <Link to={`/clubs/${encodeURIComponent(n.club?.nom ?? "")}`} className="font-semibold hover:text-cyan-bright">
+                        {n.club?.nom ?? "Club supprimé"}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-2.5 whitespace-nowrap">{n.poste || "—"}</td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex flex-wrap gap-1">
+                        {(n.criteres ?? []).map((c) => (
+                          <span key={c} className="text-[11px] bg-line/30 border border-line rounded-full px-2 py-0.5 text-ink-dim">{c}</span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <span className={`badge ${statutBadgeClass(n.statut)}`}>{statutLabel(n.statut)}</span>
+                    </td>
+                    <td className="px-4 py-2.5 whitespace-nowrap text-ink-dim">{formatDateFr(n.created_at)}</td>
+                    {canEdit && (
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        <div className="flex gap-1 justify-end">
+                          <button onClick={() => startEdit(n)} className="btn btn-ghost p-1.5" title="Modifier"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => removeNeed(n)} className="btn btn-ghost p-1.5" title="Supprimer"><Trash2 className="w-3.5 h-3.5 text-red-300" /></button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                )
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
