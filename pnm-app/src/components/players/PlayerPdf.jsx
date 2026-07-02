@@ -82,8 +82,19 @@ function poly(cx, cy, r) {
   }).join(" ");
 }
 
-function RadarPlaceholder() {
+const AXES_KEYS = ["vitesse", "technique", "physique", "mental", "tactique", "passes"];
+
+function RadarPlaceholder({ evaluation }) {
   const W = 250, H = 210, cx = 125, cy = 100, R = 78;
+  const hasData = !!evaluation;
+  const dataPoints = hasData
+    ? AXES_KEYS.map((k, i) => {
+        const v = Number(evaluation[k]) || 0;
+        const r = R * (v / 10);
+        const a = -Math.PI / 2 + (i * Math.PI) / 3;
+        return `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`;
+      }).join(" ")
+    : null;
   return (
     <View style={s.radarWrap}>
       <Svg width={W} height={H}>
@@ -101,14 +112,20 @@ function RadarPlaceholder() {
             </G>
           );
         })}
-        <SvgText x={cx} y={cy} fill={C.dim} fontSize={8} textAnchor="middle">Évaluation à venir</SvgText>
+        {hasData ? (
+          <Polygon points={dataPoints} stroke={C.cyan} strokeWidth={1.5} fill="rgba(124,227,255,0.22)" />
+        ) : (
+          <SvgText x={cx} y={cy} fill={C.dim} fontSize={8} textAnchor="middle">Évaluation à venir</SvgText>
+        )}
       </Svg>
-      <Text style={s.radarNote}>Notation en attente — API BeSoccer Pro</Text>
+      <Text style={s.radarNote}>
+        {hasData ? "Scouting interne PNM" : "Notation en attente — scouting interne ou API BeSoccer Pro"}
+      </Text>
     </View>
   );
 }
 
-export default function PlayerPdf({ player, stats = [] }) {
+export default function PlayerPdf({ player, stats = [], evaluation = null }) {
   const age = calcAge(player.date_naissance);
   const careerLine = [player.club_actuel, player.poste].filter(Boolean).join("  ·  ") || "—";
   return (
@@ -167,7 +184,7 @@ export default function PlayerPdf({ player, stats = [] }) {
             <View style={s.rule} />
           </View>
 
-          <RadarPlaceholder />
+          <RadarPlaceholder evaluation={evaluation} />
 
           {stats.length > 0 ? (
             <View style={s.table}>
