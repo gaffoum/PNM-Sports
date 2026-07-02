@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck, Sparkles, Building2, ClipboardList, CalendarClock, GitMerge, Euro, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck, Sparkles, Building2, ClipboardList, CalendarClock, GitMerge, Euro, ShieldAlert, Menu, X } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { useFeatures } from "../../hooks/useFeatures";
 import { isOwner } from "../../lib/ownership";
@@ -47,6 +47,7 @@ function SidebarContent({ agent, isAdmin, hasFeature, onNavigate, onSignOut, goP
         {hasFeature("placement_commissions") && <NavItem to="/commissions" icon={Euro} onClick={onNavigate}>Commissions</NavItem>}
         <NavItem to="/players/new" icon={UserPlus} onClick={onNavigate}>Ajouter</NavItem>
         {isAdmin && <NavItem to="/agents" icon={ShieldCheck} onClick={onNavigate}>Agents</NavItem>}
+        {isAdmin && hasFeature("secu_audit") && <NavItem to="/audit" icon={ShieldAlert} onClick={onNavigate}>Journal d'audit</NavItem>}
         {isOwner(agent) && <NavItem to="/features" icon={Sparkles} onClick={onNavigate}>Briques</NavItem>}
       </nav>
 
