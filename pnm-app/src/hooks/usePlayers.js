@@ -61,6 +61,12 @@ export function usePlayers({ page = 0, pageSize = 20, search = "", filters = {},
   return { rows, count, loading, error, refetch: fetchPlayers };
 }
 
+export async function listPlayersBasic() {
+  const { data, error } = await supabase.from("players").select("id, nom, prenom").order("nom");
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function getPlayerById(id) {
   const { data, error } = await supabase
     .from("players")

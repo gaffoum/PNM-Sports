@@ -21,6 +21,8 @@ import ClubDirectory from "./pages/ClubDirectory";
 import ClubDetail from "./pages/ClubDetail";
 import ClubNeeds from "./pages/ClubNeeds";
 import Agenda from "./pages/Agenda";
+import Pipeline from "./pages/Pipeline";
+import Commissions from "./pages/Commissions";
 import Profile from "./pages/Profile";
 
 export default function App() {
@@ -50,6 +52,8 @@ export default function App() {
             <Route path="/clubs/:club" element={<FeatureGate feature="placement_clubs"><ClubDetail /></FeatureGate>} />
             <Route path="/besoins-clubs" element={<FeatureGate feature="placement_besoins_clubs"><ClubNeeds /></FeatureGate>} />
             <Route path="/agenda" element={<FeatureGate feature="placement_agenda"><Agenda /></FeatureGate>} />
+            <Route path="/pipeline" element={<FeatureGate feature="placement_pipeline"><Pipeline /></FeatureGate>} />
+            <Route path="/commissions" element={<FeatureGate feature="placement_commissions"><Commissions /></FeatureGate>} />
             <Route path="/agents" element={<ProtectedRoute requireAdmin><Agents /></ProtectedRoute>} />
             <Route path="/features" element={<ProtectedRoute requireAdmin><OwnerRoute><Features /></OwnerRoute></ProtectedRoute>} />
             <Route path="/profile" element={<Profile />} />
