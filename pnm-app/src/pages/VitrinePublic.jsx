@@ -3,15 +3,7 @@ import { Link } from "react-router-dom";
 import { isFeaturePublicEnabled, getVitrineJoueurs } from "../hooks/useVitrine";
 import { useLang } from "../lib/i18n";
 import { calcAge } from "../lib/utils";
-
-function LangSwitch({ lang, setLang }) {
-  return (
-    <div className="flex items-center gap-1 text-xs">
-      <button onClick={() => setLang("fr")} className={`px-2 py-1 rounded ${lang === "fr" ? "bg-cyan-bright/15 text-cyan-bright" : "text-ink-muted hover:text-ink"}`}>FR</button>
-      <button onClick={() => setLang("en")} className={`px-2 py-1 rounded ${lang === "en" ? "bg-cyan-bright/15 text-cyan-bright" : "text-ink-muted hover:text-ink"}`}>EN</button>
-    </div>
-  );
-}
+import LangSwitch from "../components/common/LangSwitch";
 
 export default function VitrinePublic() {
   const { lang, setLang, t } = useLang();

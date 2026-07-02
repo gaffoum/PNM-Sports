@@ -3,6 +3,7 @@ import { Toaster } from "sonner";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ConfirmProvider } from "./contexts/ConfirmContext";
 import { FeatureProvider } from "./contexts/FeatureContext";
+import { LanguageProvider } from "./contexts/LanguageContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import FeatureGate from "./components/auth/FeatureGate";
 import OwnerRoute from "./components/auth/OwnerRoute";
@@ -40,6 +41,7 @@ export default function App() {
   return (
     <AuthProvider>
       <FeatureProvider>
+      <LanguageProvider>
       <ConfirmProvider>
       <BrowserRouter>
         <Toaster theme="dark" position="bottom-right" richColors />
@@ -85,6 +87,7 @@ export default function App() {
         </Routes>
       </BrowserRouter>
       </ConfirmProvider>
+      </LanguageProvider>
       </FeatureProvider>
     </AuthProvider>
   );

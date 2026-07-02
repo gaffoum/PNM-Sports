@@ -37,6 +37,7 @@ create table if not exists public.agents (
   role public.agent_role not null default 'agent',
   permissions jsonb not null default '{}'::jsonb,
   actif boolean not null default true,
+  langue text not null default 'fr' check (langue in ('fr', 'en')),
   created_at timestamptz not null default now()
 );
 
@@ -215,6 +216,25 @@ drop policy if exists "agents_protect_owner_delete" on public.agents;
 create policy "agents_protect_owner_delete" on public.agents
   as restrictive for delete to authenticated
   using (lower(email) <> 'gaffoum@gmail.com' or id = auth.uid());
+
+-- Preference de langue : fonction dediee (plutot qu'une policy
+-- self-update sur toute la ligne, qui laisserait un agent modifier
+-- son propre role/permissions).
+create or replace function public.update_my_langue(p_langue text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_langue not in ('fr', 'en') then
+    raise exception 'Langue invalide : %', p_langue;
+  end if;
+  update public.agents set langue = p_langue where id = auth.uid();
+end;
+$$;
+
+grant execute on function public.update_my_langue(text) to authenticated;
 
 -- players :
 --   - admin : tout
