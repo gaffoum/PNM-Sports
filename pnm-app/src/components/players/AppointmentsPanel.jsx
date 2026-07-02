@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Check, X, CalendarClock, MapPin } from "lucide-react";
 import { createAppointment, updateAppointment, deleteAppointment } from "../../hooks/useAppointments";
-import { createNotification } from "../../hooks/useNotifications";
+import { createNotification, sendNotificationEmail } from "../../hooks/useNotifications";
 import { useAuth } from "../../hooks/useAuth";
 import { useConfirm } from "../../contexts/ConfirmContext";
 import { useFeatures } from "../../hooks/useFeatures";
@@ -49,12 +49,20 @@ export default function AppointmentsPanel({ playerId, player, appointments, onCh
       setForm(EMPTY);
       setShowAdd(false);
       toast.success("Rendez-vous ajouté");
+      const rdvWhen = new Date(created.date_rdv).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
       if (hasFeature("comm_notifications") && player?.agent?.id && player.agent.id !== agent.id) {
         createNotification({
           agent_id: player.agent.id,
           title: `Nouveau rendez-vous : ${player.prenom} ${player.nom}`,
-          message: `${created.titre} — ${new Date(created.date_rdv).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`,
+          message: `${created.titre} — ${rdvWhen}`,
           link: `/players/${playerId}`,
+        }).catch(() => {});
+      }
+      if (hasFeature("comm_emails") && player?.agent?.email && player.agent.id !== agent.id) {
+        sendNotificationEmail({
+          to: player.agent.email,
+          subject: `Nouveau rendez-vous : ${player.prenom} ${player.nom}`,
+          text: `Bonjour,\n\nUn nouveau rendez-vous a été programmé pour ${player.prenom} ${player.nom} : ${created.titre} (${rdvWhen}).\n\nPNM Sports`,
         }).catch(() => {});
       }
     } catch (e) {

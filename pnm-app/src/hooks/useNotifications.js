@@ -24,3 +24,10 @@ export async function createNotification({ agent_id, title, message, link }) {
   const { error } = await supabase.from("notifications").insert({ agent_id, title, message: message ?? null, link: link ?? null });
   if (error) throw error;
 }
+
+// Brique "Emails automatiques" (comm_emails) : relais d'un événement vers
+// un e-mail transactionnel, pour les agents non connectés à l'instant T.
+export async function sendNotificationEmail({ to, subject, text }) {
+  const { data, error } = await supabase.functions.invoke("send-notification-email", { body: { to, subject, text } });
+  if (error || data?.error) throw new Error(data?.error || error.message);
+}
