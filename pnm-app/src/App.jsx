@@ -28,6 +28,7 @@ import RgpdRequests from "./pages/RgpdRequests";
 import Portfolio from "./pages/Portfolio";
 import Reports from "./pages/Reports";
 import Profile from "./pages/Profile";
+import PwaRegistration from "./components/common/PwaRegistration";
 
 export default function App() {
   return (
@@ -36,6 +37,7 @@ export default function App() {
       <ConfirmProvider>
       <BrowserRouter>
         <Toaster theme="dark" position="bottom-right" richColors />
+        <PwaRegistration />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
