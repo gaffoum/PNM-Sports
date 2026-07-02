@@ -54,28 +54,39 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) return json({ error: "Service IA non configuré (ANTHROPIC_API_KEY manquant)." }, 500);
 
-    const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-5",
-        max_tokens: 4096,
-        system: SYSTEM_PROMPT,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "document", source: { type: "base64", media_type: "application/pdf", data: pdfBase64 } },
-              { type: "text", text: "Analyse ce document et renvoie le JSON demandé." },
-            ],
-          },
-        ],
-      }),
-    });
+    let claudeRes: Response;
+    try {
+      claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-5",
+          max_tokens: 4096,
+          system: SYSTEM_PROMPT,
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "document", source: { type: "base64", media_type: "application/pdf", data: pdfBase64 } },
+                { type: "text", text: "Analyse ce document et renvoie le JSON demandé." },
+              ],
+            },
+          ],
+        }),
+        signal: AbortSignal.timeout(50_000),
+      });
+    } catch (fetchErr) {
+      const isTimeout = (fetchErr as Error)?.name === "TimeoutError" || (fetchErr as Error)?.name === "AbortError";
+      return json({
+        error: isTimeout
+          ? "L'analyse a dépassé le délai autorisé (50s). Essaie avec un document plus court, ou découpe-le en plusieurs PDF plus petits."
+          : `Échec de l'appel à l'IA : ${String((fetchErr as Error)?.message ?? fetchErr)}`,
+      }, isTimeout ? 504 : 502);
+    }
 
     if (!claudeRes.ok) {
       const detail = await claudeRes.text().catch(() => "");

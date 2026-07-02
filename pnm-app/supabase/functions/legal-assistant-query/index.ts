@@ -72,22 +72,33 @@ Deno.serve(async (req) => {
       .map((c: any, i: number) => `[Extrait ${i + 1} — ${c.source_titre}${c.reference ? `, ${c.reference}` : ""}]\n${c.contenu}`)
       .join("\n\n");
 
-    const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-5",
-        max_tokens: 2048,
-        system: SYSTEM_PROMPT,
-        messages: [
-          { role: "user", content: `Extraits disponibles :\n\n${context}\n\nQuestion de l'agent : ${question}` },
-        ],
-      }),
-    });
+    let claudeRes: Response;
+    try {
+      claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-5",
+          max_tokens: 2048,
+          system: SYSTEM_PROMPT,
+          messages: [
+            { role: "user", content: `Extraits disponibles :\n\n${context}\n\nQuestion de l'agent : ${question}` },
+          ],
+        }),
+        signal: AbortSignal.timeout(50_000),
+      });
+    } catch (fetchErr) {
+      const isTimeout = (fetchErr as Error)?.name === "TimeoutError" || (fetchErr as Error)?.name === "AbortError";
+      return json({
+        error: isTimeout
+          ? "La génération de la réponse a dépassé le délai autorisé (50s). Réessaie."
+          : `Échec de l'appel à l'IA : ${String((fetchErr as Error)?.message ?? fetchErr)}`,
+      }, isTimeout ? 504 : 502);
+    }
 
     if (!claudeRes.ok) {
       const detail = await claudeRes.text().catch(() => "");
