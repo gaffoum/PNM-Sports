@@ -26,7 +26,9 @@
     { "source": "/blog", "destination": "/agent/index.html" },
     { "source": "/vitrine", "destination": "/agent/index.html" },
     { "source": "/actualites", "destination": "/agent/index.html" },
-    { "source": "/actualites/:path*", "destination": "/agent/index.html" }
+    { "source": "/actualites/:path*", "destination": "/agent/index.html" },
+    { "source": "/documents", "destination": "/agent/index.html" },
+    { "source": "/documents/:path*", "destination": "/agent/index.html" }
   ],
   "headers": [
     {

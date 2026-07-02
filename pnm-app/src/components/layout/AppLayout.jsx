@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck, Sparkles, Building2, ClipboardList, CalendarClock, GitMerge, Euro, ShieldAlert, ScrollText, Wallet, FileBarChart, Newspaper, Menu, X } from "lucide-react";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
+import { LayoutDashboard, Users, UserPlus, LogOut, User, LayoutGrid, ShieldCheck, Sparkles, Building2, ClipboardList, CalendarClock, GitMerge, Euro, ShieldAlert, ScrollText, Wallet, FileBarChart, Newspaper, FileText, ChevronDown, Menu, X } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { useFeatures } from "../../hooks/useFeatures";
 import { isOwner } from "../../lib/ownership";
@@ -24,6 +24,38 @@ function NavItem({ to, icon: Icon, children, end, onClick, sub }) {
   );
 }
 
+function NavGroup({ to, icon: Icon, children, label, onNavigate }) {
+  const location = useLocation();
+  const isActive = location.pathname === to || location.pathname.startsWith(`${to}/`);
+  const [open, setOpen] = useState(isActive);
+
+  return (
+    <div>
+      <div className={`flex items-center rounded-lg text-sm transition-colors ${isActive ? "bg-cyan-bright/10" : "hover:bg-line/30"}`}>
+        <NavLink
+          to={to}
+          onClick={onNavigate}
+          className={`flex-1 flex items-center gap-3 px-3 py-2.5 min-w-0 ${isActive ? "text-cyan-bright" : "text-ink-dim hover:text-ink"}`}
+        >
+          <Icon className="w-4 h-4 shrink-0" />
+          <span>{label}</span>
+        </NavLink>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className={`px-2.5 py-2.5 shrink-0 ${isActive ? "text-cyan-bright" : "text-ink-dim hover:text-ink"}`}
+          title={open ? "Réduire" : "Développer"}
+        >
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        </button>
+      </div>
+      <div className={`grid transition-all duration-200 ease-in-out ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+        <div className="overflow-hidden">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 function SidebarContent({ agent, isAdmin, hasFeature, onNavigate, onSignOut, goProfile }) {
   return (
     <div className="flex flex-col h-full">
@@ -44,8 +76,9 @@ function SidebarContent({ agent, isAdmin, hasFeature, onNavigate, onSignOut, goP
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         <NavItem to="/dashboard" icon={LayoutDashboard} end onClick={onNavigate}>Tableau de bord</NavItem>
-        <NavItem to="/players" icon={Users} onClick={onNavigate}>Joueurs</NavItem>
-        <NavItem to="/players/new" icon={UserPlus} onClick={onNavigate} sub>Ajouter</NavItem>
+        <NavGroup to="/players" icon={Users} label="Joueurs" onNavigate={onNavigate}>
+          <NavItem to="/players/new" icon={UserPlus} onClick={onNavigate} sub>Ajouter</NavItem>
+        </NavGroup>
         <NavItem to="/recrutement" icon={LayoutGrid} onClick={onNavigate}>Prospection</NavItem>
         {hasFeature("placement_clubs") && <NavItem to="/clubs" icon={Building2} onClick={onNavigate}>Clubs</NavItem>}
         {hasFeature("placement_besoins_clubs") && <NavItem to="/besoins-clubs" icon={ClipboardList} onClick={onNavigate}>Besoins clubs</NavItem>}
@@ -53,6 +86,7 @@ function SidebarContent({ agent, isAdmin, hasFeature, onNavigate, onSignOut, goP
         {hasFeature("placement_pipeline") && <NavItem to="/pipeline" icon={GitMerge} onClick={onNavigate}>Pipeline</NavItem>}
         {hasFeature("placement_commissions") && <NavItem to="/commissions" icon={Euro} onClick={onNavigate}>Commissions</NavItem>}
         {hasFeature("pilotage_portefeuille") && <NavItem to="/portefeuille" icon={Wallet} onClick={onNavigate}>Portefeuille</NavItem>}
+        {hasFeature("media_generateur_documents") && <NavItem to="/documents" icon={FileText} onClick={onNavigate}>Documents</NavItem>}
         {isAdmin && <NavItem to="/agents" icon={ShieldCheck} onClick={onNavigate}>Agents</NavItem>}
         {isAdmin && hasFeature("secu_audit") && <NavItem to="/audit" icon={ShieldAlert} onClick={onNavigate}>Journal d'audit</NavItem>}
         {isAdmin && hasFeature("secu_rgpd") && <NavItem to="/rgpd" icon={ScrollText} onClick={onNavigate}>Demandes RGPD</NavItem>}

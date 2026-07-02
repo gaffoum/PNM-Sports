@@ -31,6 +31,9 @@ import Profile from "./pages/Profile";
 import VitrinePublic from "./pages/VitrinePublic";
 import BlogPublic from "./pages/BlogPublic";
 import BlogAdmin from "./pages/BlogAdmin";
+import Documents from "./pages/Documents";
+import DocumentGenerate from "./pages/DocumentGenerate";
+import DocumentTemplates from "./pages/DocumentTemplates";
 import PwaRegistration from "./components/common/PwaRegistration";
 
 export default function App() {
@@ -72,6 +75,9 @@ export default function App() {
             <Route path="/portefeuille" element={<FeatureGate feature="pilotage_portefeuille"><Portfolio /></FeatureGate>} />
             <Route path="/rapports" element={<ProtectedRoute requireAdmin><FeatureGate feature="pilotage_rapports"><Reports /></FeatureGate></ProtectedRoute>} />
             <Route path="/blog" element={<ProtectedRoute requireAdmin><FeatureGate feature="vitrine_blog"><BlogAdmin /></FeatureGate></ProtectedRoute>} />
+            <Route path="/documents" element={<FeatureGate feature="media_generateur_documents"><Documents /></FeatureGate>} />
+            <Route path="/documents/nouveau" element={<FeatureGate feature="media_generateur_documents"><DocumentGenerate /></FeatureGate>} />
+            <Route path="/documents/modeles" element={<ProtectedRoute requireAdmin><FeatureGate feature="media_generateur_documents"><DocumentTemplates /></FeatureGate></ProtectedRoute>} />
             <Route path="/features" element={<ProtectedRoute requireAdmin><OwnerRoute><Features /></OwnerRoute></ProtectedRoute>} />
             <Route path="/profile" element={<Profile />} />
           </Route>

@@ -33,6 +33,7 @@ export const FEATURES = [
   { key: "media_videos",          label: "Galerie vidéos / highlights",        pack: "documents_media" },
   { key: "media_signature",       label: "Signature électronique",             pack: "documents_media" },
   { key: "media_book",            label: "Book / plaquette joueur",            pack: "documents_media" },
+  { key: "media_generateur_documents", label: "Générateur de documents (contrats, mandats)", pack: "documents_media" },
   { key: "pilotage_dashboard",    label: "Tableau de bord avancé",             pack: "mobile_pilotage" },
   { key: "pilotage_rapports",     label: "Rapports périodiques",               pack: "mobile_pilotage" },
   { key: "pilotage_portefeuille", label: "Vue portefeuille & valorisation",    pack: "mobile_pilotage" },
