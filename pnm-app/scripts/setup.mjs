@@ -111,17 +111,26 @@ async function setupAdmin(admin) {
     log("ADMIN", `Utilisateur cree (${userId}).`);
   }
 
+  // Le tout premier compte agent cree sur une base fraiche devient
+  // proprietaire (is_owner) — seul habilite a piloter /features. Sur les
+  // executions suivantes (base non vide), on ne touche pas au statut owner
+  // existant.
+  const { count } = await admin.from("agents").select("id", { count: "exact", head: true });
+  const isFirstAgent = (count ?? 0) === 0;
+
   log("ADMIN", "Upsert dans public.agents...");
   const { error: upsertErr } = await admin
     .from("agents")
     .upsert({
       id: userId,
       nom: ADMIN_NOM ?? "Admin",
-      prenom: ADMIN_PRENOM ?? "PNM",
+      prenom: ADMIN_PRENOM ?? "Compte",
       email: ADMIN_EMAIL,
       role: "admin",
+      ...(isFirstAgent ? { is_owner: true } : {}),
     }, { onConflict: "id" });
   if (upsertErr) throw upsertErr;
+  if (isFirstAgent) log("ADMIN", "Premier compte de la base -> is_owner = true (proprietaire).");
   log("ADMIN", "Compte admin pret.");
 }
 

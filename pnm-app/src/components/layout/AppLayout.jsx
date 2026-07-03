@@ -7,6 +7,7 @@ import { useLanguage } from "../../hooks/useLanguage";
 import { isOwner } from "../../lib/ownership";
 import NotificationBell from "./NotificationBell";
 import LangSwitch from "../common/LangSwitch";
+import { BRAND } from "../../config/brand";
 
 function NavItem({ to, icon: Icon, children, end, onClick, sub }) {
   return (
@@ -65,9 +66,9 @@ function SidebarContent({ agent, isAdmin, hasFeature, onNavigate, onSignOut, goP
     <div className="flex flex-col h-full">
       {/* Marque */}
       <div className="flex items-center gap-3 px-5 h-16 border-b border-line shrink-0">
-        <img src={`${import.meta.env.BASE_URL}logo-pnm.png`} alt="PNM Sports" className="w-9 h-9 rounded-lg object-contain" />
+        <img src={BRAND.logoPath} alt={BRAND.name} className="w-9 h-9 rounded-lg object-contain" />
         <div className="leading-tight">
-          <div className="font-display font-bold text-sm tracking-[0.18em]">PNM SPORTS</div>
+          <div className="font-display font-bold text-sm tracking-[0.18em] uppercase">{BRAND.name}</div>
           <div className="text-[9px] tracking-[0.3em] text-cyan-bright">ESPACE AGENTS</div>
         </div>
         <div className="ml-auto flex items-center gap-1">
@@ -165,8 +166,8 @@ export default function AppLayout() {
         <button onClick={() => setMobileOpen(true)} className="btn btn-ghost px-2" title="Menu">
           <Menu className="w-5 h-5" />
         </button>
-        <img src={`${import.meta.env.BASE_URL}logo-pnm.png`} alt="PNM Sports" className="w-7 h-7 rounded object-contain" />
-        <span className="font-display font-bold text-sm tracking-[0.18em]">PNM SPORTS</span>
+        <img src={BRAND.logoPath} alt={BRAND.name} className="w-7 h-7 rounded object-contain" />
+        <span className="font-display font-bold text-sm tracking-[0.18em] uppercase">{BRAND.name}</span>
         {hasFeature("comm_notifications") && (
           <div className="ml-auto">
             <NotificationBell />
@@ -193,7 +194,7 @@ export default function AppLayout() {
           <Outlet />
         </main>
         <footer className="border-t border-line py-4 text-center text-[11px] text-ink-muted">
-          © {new Date().getFullYear()} PNM Sports — Espace agents ·{" "}
+          © {new Date().getFullYear()} {BRAND.name} — Espace agents ·{" "}
           <a
             href={`${import.meta.env.BASE_URL}guide-utilisateur.html`}
             target="_blank"

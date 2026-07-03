@@ -7,6 +7,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { useConfirm } from "../../contexts/ConfirmContext";
 import { useFeatures } from "../../hooks/useFeatures";
 import { APPOINTMENT_STATUTS, appointmentStatutLabel, appointmentStatutBadgeClass } from "../../lib/appointments";
+import { BRAND } from "../../config/brand";
 
 const EMPTY = { titre: "", date_rdv: "", lieu: "", notes: "", statut: "a_venir" };
 
@@ -62,7 +63,7 @@ export default function AppointmentsPanel({ playerId, player, appointments, onCh
         sendNotificationEmail({
           to: player.agent.email,
           subject: `Nouveau rendez-vous : ${player.prenom} ${player.nom}`,
-          text: `Bonjour,\n\nUn nouveau rendez-vous a été programmé pour ${player.prenom} ${player.nom} : ${created.titre} (${rdvWhen}).\n\nPNM Sports`,
+          text: `Bonjour,\n\nUn nouveau rendez-vous a été programmé pour ${player.prenom} ${player.nom} : ${created.titre} (${rdvWhen}).\n\n${BRAND.name}`,
         }).catch(() => {});
       }
     } catch (e) {

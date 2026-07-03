@@ -10,6 +10,7 @@ import { useFeatures } from "../../hooks/useFeatures";
 import { STEPS, STEP_KEYS, DEFAULT_STEP, statutForStep } from "../../lib/recruitment";
 import { CLUBS } from "../../lib/clubs";
 import AutocompleteInput from "../common/AutocompleteInput";
+import { BRAND } from "../../config/brand";
 
 const schema = z.object({
   nom: z.string().min(1, "Requis"),
@@ -198,7 +199,7 @@ export default function PlayerForm({ player, onCancel, onSaved }) {
           <input type="checkbox" className="mt-1" {...register("consentement_rgpd")} />
           <span className="text-sm text-ink-dim">
             Le joueur (ou son représentant légal) a donné son <b>consentement RGPD</b> pour le stockage et le traitement
-            de ses données personnelles par PNM Sports. Il peut demander à tout moment l'accès, la rectification ou la suppression.
+            de ses données personnelles par {BRAND.name}. Il peut demander à tout moment l'accès, la rectification ou la suppression.
           </span>
         </label>
       </section>

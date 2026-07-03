@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { isFeaturePublicEnabled, getVitrineBlogPosts } from "../hooks/useVitrine";
 import { useLang } from "../lib/i18n";
 import { formatDateFr } from "../lib/utils";
+import { BRAND } from "../config/brand";
 
 export default function BlogPublic() {
   const { slug } = useParams();
@@ -37,8 +38,8 @@ export default function BlogPublic() {
     <div className="min-h-screen bg-bg-0 text-ink">
       <header className="border-b border-line px-6 h-16 flex items-center gap-2">
         <Link to="/vitrine" className="flex items-center gap-2">
-          <img src={`${import.meta.env.BASE_URL}logo-pnm.png`} alt="PNM Sports" className="w-8 h-8 rounded object-contain" />
-          <span className="font-display font-bold text-sm tracking-[0.18em]">PNM SPORTS</span>
+          <img src={BRAND.logoPath} alt={BRAND.name} className="w-8 h-8 rounded object-contain" />
+          <span className="font-display font-bold text-sm tracking-[0.18em] uppercase">{BRAND.name}</span>
         </Link>
       </header>
 
@@ -76,7 +77,7 @@ export default function BlogPublic() {
       </main>
 
       <footer className="border-t border-line py-4 text-center text-[11px] text-ink-muted">
-        © {new Date().getFullYear()} PNM Sports — {t("footer_rights")}
+        © {new Date().getFullYear()} {BRAND.name} — {t("footer_rights")}
       </footer>
     </div>
   );

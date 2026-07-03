@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import ForcePasswordChange from "./ForcePasswordChange";
+import { BRAND } from "../../config/brand";
 
 export default function ProtectedRoute({ children, requireAdmin = false }) {
   const { isAuthenticated, agent, loading, mustChangePassword } = useAuth();
@@ -22,7 +23,7 @@ export default function ProtectedRoute({ children, requireAdmin = false }) {
         <div className="panel p-6 max-w-md">
           <h2 className="text-xl mb-2">Compte non autorisé</h2>
           <p className="text-ink-dim text-sm">
-            Ton compte est authentifié mais n'est pas rattaché à un agent PNM. Contacte un administrateur.
+            Ton compte est authentifié mais n'est pas rattaché à un agent {BRAND.name}. Contacte un administrateur.
           </p>
         </div>
       </div>

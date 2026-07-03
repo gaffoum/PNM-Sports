@@ -3,6 +3,7 @@ import {
   Svg, Polygon, Line, Circle, Path, G, Text as SvgText,
 } from "@react-pdf/renderer";
 import { calcAge, formatDateFr, formatMoney } from "../../lib/utils";
+import { BRAND } from "../../config/brand";
 
 // ===== Charte "Élite Dark" =====
 const C = {
@@ -18,7 +19,7 @@ const C = {
   sil: "#1a3a56",
 };
 
-const LOGO_URL = (import.meta.env.BASE_URL || "/") + "logo-pnm.png";
+const LOGO_URL = BRAND.logoPath;
 
 const s = StyleSheet.create({
   page: { backgroundColor: C.bg, color: C.white, fontFamily: "Helvetica", fontSize: 10, paddingBottom: 44 },
@@ -124,7 +125,7 @@ function RadarPlaceholder({ evaluation }) {
         )}
       </Svg>
       <Text style={s.radarNote}>
-        {hasData ? "Scouting interne PNM" : "Notation en attente — scouting interne ou API BeSoccer Pro"}
+        {hasData ? `Scouting interne ${BRAND.name}` : "Notation en attente — scouting interne ou API BeSoccer Pro"}
       </Text>
     </View>
   );
@@ -172,7 +173,7 @@ function BookPage({ player, videos, docs }) {
         </View>
       </View>
       <Text style={s.footer}>
-        PNM Sports — Document confidentiel — Usage interne uniquement · Édité le {formatDateFr(new Date())}
+        {BRAND.name} — Document confidentiel — Usage interne uniquement · Édité le {formatDateFr(new Date())}
       </Text>
     </Page>
   );
@@ -268,7 +269,7 @@ export default function PlayerPdf({ player, stats = [], evaluation = null, book 
         </View>
 
         <Text style={s.footer}>
-          PNM Sports — Document confidentiel — Usage interne uniquement · Édité le {formatDateFr(new Date())}
+          {BRAND.name} — Document confidentiel — Usage interne uniquement · Édité le {formatDateFr(new Date())}
         </Text>
       </Page>
       {book && <BookPage player={player} videos={videos} docs={docs} />}

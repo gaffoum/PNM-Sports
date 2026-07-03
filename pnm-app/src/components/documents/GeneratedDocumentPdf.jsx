@@ -1,7 +1,8 @@
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 import { formatDateFr } from "../../lib/utils";
+import { BRAND } from "../../config/brand";
 
-const LOGO_URL = (import.meta.env.BASE_URL || "/") + "logo-pnm.png";
+const LOGO_URL = BRAND.logoPath;
 
 // Style sobre "papier" (noir sur blanc) — un document légal se lit et
 // s'imprime différemment d'une fiche joueur marketing.
@@ -22,7 +23,7 @@ export default function GeneratedDocumentPdf({ titre, paragraphes = [] }) {
     <Document>
       <Page size="A4" style={s.page}>
         <View style={s.header}>
-          <Text style={s.headTitle}>PNM Sports</Text>
+          <Text style={s.headTitle}>{BRAND.name}</Text>
           <Image src={LOGO_URL} style={s.logo} />
         </View>
         <Text style={s.title}>{titre}</Text>
@@ -34,7 +35,7 @@ export default function GeneratedDocumentPdf({ titre, paragraphes = [] }) {
           </View>
         ))}
         <Text style={s.footer} fixed>
-          PNM Sports — Document confidentiel · Édité le {formatDateFr(new Date())}
+          {BRAND.name} — Document confidentiel · Édité le {formatDateFr(new Date())}
         </Text>
       </Page>
     </Document>

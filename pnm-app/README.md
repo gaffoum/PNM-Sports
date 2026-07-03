@@ -1,6 +1,11 @@
-# PNM Sports — Espace agents
+# Espace agents
 
-Application interne de gestion des joueurs et prospects pour l'agence PNM Sports.
+Application interne de gestion des joueurs et prospects pour une agence de
+football. Le nom, le logo et les couleurs affichés dans l'app sont pilotés
+par `src/config/brand.js` (voir les variables `VITE_BRAND_*` ci-dessous) —
+ce dépôt sert de template : chaque déploiement client garde ce code commun
+et ne personnalise que sa configuration et ses propres comptes d'infra
+(Supabase, Vercel, Resend).
 
 - **Frontend** : React 19 + Vite 8
 - **Styling** : Tailwind CSS v3, composants UI maison (style cyan/marine de la marque)
@@ -32,12 +37,12 @@ Application interne de gestion des joueurs et prospects pour l'agence PNM Sports
 ### Installation
 
 ```bash
-git clone https://github.com/gaffoum/PNM-Sports.git
-cd PNM-Sports/pnm-app
+git clone <url-du-repo-client>
+cd <dossier>/pnm-app
 npm install
 cp .env.example .env.local
-# Remplir .env.local avec tes valeurs Supabase
-npm run setup    # applique schema.sql, crée buckets, crée admin demo
+# Remplir .env.local avec les valeurs Supabase + VITE_BRAND_* de ce client
+npm run setup    # applique schema.sql, crée buckets, crée le 1er compte admin (owner)
 npm run dev      # http://localhost:5173
 ```
 
@@ -51,15 +56,13 @@ npm run dev      # http://localhost:5173
 | `SUPABASE_DB_PASSWORD` | Mot de passe Postgres (script setup) | **serveur uniquement** |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Compte admin créé par setup | local uniquement |
 | `ADMIN_NOM` / `ADMIN_PRENOM` | Identité de l'admin | local uniquement |
+| `VITE_BRAND_NAME` / `VITE_BRAND_LEGAL_NAME` / `VITE_BRAND_DOMAIN` / `VITE_BRAND_CONTACT_EMAIL` / `VITE_BRAND_THEME_COLOR` | Identité de marque affichée dans l'app (voir `src/config/brand.js`) | client |
 
 > ⚠️ Les variables `VITE_*` sont **embarquées dans le bundle client**. Ne mets jamais la `service_role` ou le mot de passe DB dans une variable préfixée `VITE_`.
 
-### Compte admin de démonstration
+### Premier compte admin
 
-Créé par `npm run setup` à partir des variables `ADMIN_*` du `.env.local`. Par défaut :
-
-- Email : `gaffoum@gmail.com`
-- Mot de passe : `123456` *(à changer après le 1er login via /profile)*
+Créé par `npm run setup` à partir des variables `ADMIN_EMAIL` / `ADMIN_PASSWORD` (et `ADMIN_NOM` / `ADMIN_PRENOM`) du `.env.local` — mets-y l'email réel du client, pas un compte de test. S'agissant du tout premier compte créé sur une base fraîche, il devient automatiquement propriétaire (`is_owner = true`, seul habilité à piloter `/features`). Change le mot de passe dès le premier login via `/profile`.
 
 ## Architecture
 

@@ -1,0 +1,22 @@
+{
+  "name": "PNM Sports — Espace agents",
+  "short_name": "PNM Sports",
+  "description": "Espace agents PNM Sports : gestion de joueurs, prospection, clubs et pipeline.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#04101f",
+  "theme_color": "#04101f",
+  "icons": [
+    {
+      "src": "/logo-pnm.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo-pnm.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

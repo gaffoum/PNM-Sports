@@ -3,10 +3,11 @@
 // Quick Wins). Reçoit un PDF déjà généré côté client (en base64) et l'envoie
 // en pièce jointe via Resend.
 //
-// Variable d'environnement à définir (Supabase → Project Settings → Edge
+// Variables d'environnement à définir (Supabase → Project Settings → Edge
 // Functions → Secrets) :
 //   RESEND_API_KEY  (obligatoire)
-//   CONTACT_FROM    (optionnel, défaut "PNM Sports <contact@pnmsport.com>")
+//   CONTACT_FROM    (obligatoire — ex. "Mon Agence <contact@mon-domaine.com>",
+//                    doit correspondre à un domaine vérifié sur Resend)
 //
 // Déploiement : supabase functions deploy send-player-pdf
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -43,9 +44,10 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get("RESEND_API_KEY");
     if (!apiKey) return json({ error: "Service e-mail non configuré (RESEND_API_KEY manquant)." }, 500);
 
-    const FROM = Deno.env.get("CONTACT_FROM") || "PNM Sports <contact@pnmsport.com>";
+    const FROM = Deno.env.get("CONTACT_FROM");
+    if (!FROM) return json({ error: "Service e-mail non configuré (CONTACT_FROM manquant)." }, 500);
     const safeName = String(playerName || "joueur").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]+/g, "-");
-    const filename = `pnm-fiche-${safeName}.pdf`;
+    const filename = `fiche-${safeName}.pdf`;
 
     const resendRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -54,7 +56,7 @@ Deno.serve(async (req) => {
         from: FROM,
         to: [to],
         subject: `Fiche joueur — ${playerName || ""}`,
-        text: `Bonjour,\n\nVeuillez trouver ci-joint la fiche de ${playerName || "ce joueur"}.\n\nPNM Sports`,
+        text: `Bonjour,\n\nVeuillez trouver ci-joint la fiche de ${playerName || "ce joueur"}.`,
         attachments: [{ filename, content: pdfBase64 }],
       }),
     });

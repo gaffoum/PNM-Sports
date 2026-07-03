@@ -2,7 +2,7 @@
 // Supprime un agent/admin (utilisateur auth + fiche agent par cascade FK).
 //
 // Règle : seul un administrateur peut supprimer. Le compte propriétaire
-// (OWNER_EMAIL) ne peut être supprimé QUE par lui-même.
+// (agents.is_owner = true) ne peut être supprimé QUE par lui-même.
 //
 // La suppression de l'utilisateur auth déclenche en cascade :
 //   - suppression de la fiche public.agents (FK on delete cascade)
@@ -10,8 +10,6 @@
 //
 // Déploiement : supabase functions deploy admin-delete-agent
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const OWNER_EMAIL = "gaffoum@gmail.com";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -45,14 +43,11 @@ Deno.serve(async (req) => {
     if (!id) return json({ error: "Identifiant de l'agent requis" }, 400);
 
     // 2) Charger la cible (côté serveur, on ne fait pas confiance au client)
-    const { data: target } = await admin.from("agents").select("id, email").eq("id", id).maybeSingle();
+    const { data: target } = await admin.from("agents").select("id, is_owner").eq("id", id).maybeSingle();
     if (!target) return json({ error: "Agent introuvable" }, 404);
 
-    const targetEmail = String(target.email ?? "").toLowerCase();
-    const callerEmail = String(user.email ?? "").toLowerCase();
-
     // 3) Règle : le compte propriétaire n'est supprimable que par lui-même
-    if (targetEmail === OWNER_EMAIL && callerEmail !== OWNER_EMAIL) {
+    if (target.is_owner && user.id !== id) {
       return json({ error: "Le compte propriétaire ne peut être supprimé que par lui-même." }, 403);
     }
 

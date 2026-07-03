@@ -13,6 +13,7 @@ import { useFeatures } from "../hooks/useFeatures";
 import { useConfirm } from "../contexts/ConfirmContext";
 import { formatDateFr } from "../lib/utils";
 import { stepLabel, stepBadgeClass } from "../lib/recruitment";
+import { BRAND } from "../config/brand";
 import { statutLabel, statutBadgeClass } from "../lib/clubNeeds";
 import { COUNTRIES } from "../lib/countries";
 import AutocompleteInput from "../components/common/AutocompleteInput";
@@ -260,7 +261,7 @@ export default function ClubDetail() {
         ) : (
           <div>
             <h1 className="text-3xl">{club.nom}</h1>
-            <p className="text-ink-dim text-sm">{club.pays || "Pays non renseigné"} · Contacts, historique et joueurs PNM.</p>
+            <p className="text-ink-dim text-sm">{club.pays || "Pays non renseigné"} · Contacts, historique et joueurs {BRAND.name}.</p>
           </div>
         )}
         {canEdit && !editingClub && (
@@ -425,12 +426,12 @@ export default function ClubDetail() {
           </div>
         )}
 
-        {/* Joueurs PNM dans ce club */}
+        {/* Joueurs de l'agence dans ce club */}
         <div className="panel p-5 space-y-3 lg:col-span-2">
           <h3 className="text-sm uppercase tracking-wider text-cyan-bright flex items-center gap-2">
-            <Users className="w-4 h-4" />Joueurs PNM dans ce club
+            <Users className="w-4 h-4" />Joueurs {BRAND.name} dans ce club
           </h3>
-          {players.length === 0 && <p className="text-sm text-ink-dim">Aucun joueur de PNM actuellement dans ce club.</p>}
+          {players.length === 0 && <p className="text-sm text-ink-dim">Aucun joueur de {BRAND.name} actuellement dans ce club.</p>}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {players.map((p) => (
               <Link key={p.id} to={`/players/${p.id}`} className="flex items-center gap-2 p-2.5 rounded-lg border border-line hover:border-line-strong transition-colors">

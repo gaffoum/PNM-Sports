@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { LogIn, Mail, KeyRound, Loader2 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
+import { BRAND } from "../../config/brand";
 
 export default function LoginForm() {
   const { signIn, resetPassword } = useAuth();
@@ -45,7 +46,7 @@ export default function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="w-full max-w-md panel p-8 space-y-5">
       <header className="text-center space-y-3">
-        <img src="/logo-pnm.png" alt="PNM Sports" className="mx-auto h-20 w-auto select-none" draggable={false} />
+        <img src={BRAND.logoPath} alt={BRAND.name} className="mx-auto h-20 w-auto select-none" draggable={false} />
         <h1 className="text-2xl">Espace agents</h1>
         <p className="text-sm text-ink-dim">Connecte-toi pour gérer joueurs et prospects.</p>
       </header>
@@ -59,7 +60,7 @@ export default function LoginForm() {
             type="email"
             autoComplete="email"
             className="input pl-10"
-            placeholder="agent@pnm-sports.com"
+            placeholder={`agent@${BRAND.domain}`}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -101,7 +102,7 @@ export default function LoginForm() {
       </div>
 
       <p className="text-[11px] text-ink-muted text-center leading-relaxed">
-        Accès réservé aux agents PNM. Les comptes sont créés par un administrateur.
+        Accès réservé aux agents {BRAND.name}. Les comptes sont créés par un administrateur.
       </p>
     </form>
   );

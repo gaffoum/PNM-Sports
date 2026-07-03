@@ -66,8 +66,11 @@ function statsFor(player) {
 }
 
 async function getAdminId() {
-  const email = ADMIN_EMAIL ?? "gaffoum@gmail.com";
-  const { data, error } = await admin.from("agents").select("id").eq("email", email).single();
+  if (!ADMIN_EMAIL) {
+    console.error("ADMIN_EMAIL manquant dans .env.local — indispensable pour rattacher les fiches de demo.");
+    process.exit(1);
+  }
+  const { data, error } = await admin.from("agents").select("id").eq("email", ADMIN_EMAIL).single();
   if (error) throw error;
   return data.id;
 }

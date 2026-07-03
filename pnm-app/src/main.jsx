@@ -3,6 +3,10 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import { supabaseConfigured } from './lib/supabaseClient'
+import { BRAND } from './config/brand'
+
+document.title = `${BRAND.name} — Espace agents`
+document.querySelector('meta[name="theme-color"]')?.setAttribute('content', BRAND.themeColor)
 
 function ConfigError() {
   return (

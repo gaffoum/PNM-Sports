@@ -16,7 +16,7 @@
 
 @layer components {
   .panel {
-    background: linear-gradient(180deg, rgba(15, 59, 82, 0.18), rgba(10, 37, 64, 0.35));
+    background: linear-gradient(180deg, theme('colors.teal.DEFAULT / 18%'), theme('colors.bg.2 / 35%'));
     @apply border border-line rounded-card;
   }
   .panel-hover { @apply hover:border-line-strong transition-colors; }
@@ -28,7 +28,7 @@
            focus:outline-none focus:ring-2 focus:ring-cyan-bright/40;
   }
   .btn-primary {
-    background: linear-gradient(135deg, #1ab8e0, #0e8cb0);
+    background: linear-gradient(135deg, theme('colors.cyan.DEFAULT'), theme('colors.cyan.deep'));
     @apply text-bg-0;
   }
   .btn-primary:hover { filter: brightness(1.08); }
@@ -58,7 +58,7 @@
      pour éviter la purge des classes générées dynamiquement. */
 }
 
-.reactEasyCrop_Container { background: #04101f; }
+.reactEasyCrop_Container { background: theme('colors.bg.0'); }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px) scale(0.98); }

@@ -4,10 +4,11 @@
 // prévenir un agent d'un événement (nouveau rendez-vous, deal signé, etc.)
 // quand il n'est pas connecté pour voir sa notification in-app.
 //
-// Variable d'environnement à définir (Supabase → Project Settings → Edge
+// Variables d'environnement à définir (Supabase → Project Settings → Edge
 // Functions → Secrets) :
 //   RESEND_API_KEY  (obligatoire, déjà utilisé par send-player-pdf)
-//   CONTACT_FROM    (optionnel, défaut "PNM Sports <contact@pnmsport.com>")
+//   CONTACT_FROM    (obligatoire — ex. "Mon Agence <contact@mon-domaine.com>",
+//                    doit correspondre à un domaine vérifié sur Resend)
 //
 // Déploiement : supabase functions deploy send-notification-email
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -43,7 +44,8 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get("RESEND_API_KEY");
     if (!apiKey) return json({ error: "Service e-mail non configuré (RESEND_API_KEY manquant)." }, 500);
 
-    const FROM = Deno.env.get("CONTACT_FROM") || "PNM Sports <contact@pnmsport.com>";
+    const FROM = Deno.env.get("CONTACT_FROM");
+    if (!FROM) return json({ error: "Service e-mail non configuré (CONTACT_FROM manquant)." }, 500);
 
     const resendRes = await fetch("https://api.resend.com/emails", {
       method: "POST",

@@ -1,7 +1,9 @@
 -- =====================================================================
--- PNM Sports - Schema complet
+-- Schema complet
 -- A executer une fois sur une base Supabase fraiche.
 -- Idempotent : peut etre re-execute sans casse (DROP IF EXISTS / CREATE OR REPLACE).
+-- Le tout premier compte admin cree via scripts/setup.mjs devient
+-- automatiquement is_owner = true (voir public.is_owner() plus bas).
 -- =====================================================================
 
 -- Extensions
@@ -38,6 +40,7 @@ create table if not exists public.agents (
   permissions jsonb not null default '{}'::jsonb,
   actif boolean not null default true,
   langue text not null default 'fr' check (langue in ('fr', 'en')),
+  is_owner boolean not null default false,
   created_at timestamptz not null default now()
 );
 
@@ -179,13 +182,15 @@ as $$
 $$;
 
 -- Compte "SuperAdmin" (proprietaire de l'agence) : au-dessus du role admin,
--- seul habilite a piloter les briques commerciales (/features).
+-- seul habilite a piloter les briques commerciales (/features). Marque par
+-- la colonne agents.is_owner plutot qu'un email en dur (chaque deploiement
+-- client attribue ce statut a son propre premier compte via scripts/setup.mjs).
 create or replace function public.is_owner() returns boolean
 language sql security definer stable
 as $$
   select exists (
     select 1 from public.agents
-    where id = auth.uid() and lower(email) = 'gaffoum@gmail.com'
+    where id = auth.uid() and is_owner = true
   );
 $$;
 
@@ -215,7 +220,7 @@ create policy "agents_admin_all" on public.agents
 drop policy if exists "agents_protect_owner_delete" on public.agents;
 create policy "agents_protect_owner_delete" on public.agents
   as restrictive for delete to authenticated
-  using (lower(email) <> 'gaffoum@gmail.com' or id = auth.uid());
+  using (is_owner = false or id = auth.uid());
 
 -- Preference de langue : fonction dediee (plutot qu'une policy
 -- self-update sur toute la ligne, qui laisserait un agent modifier

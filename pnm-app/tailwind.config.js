@@ -17,6 +17,7 @@ export default {
         cyan: {
           DEFAULT: "#1ab8e0",
           bright: "#7ce3ff",
+          deep: "#0e8cb0",
         },
         silver: "#cfe6f2",
         ink: {

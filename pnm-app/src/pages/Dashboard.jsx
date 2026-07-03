@@ -6,6 +6,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useFeatures } from "../hooks/useFeatures";
 import { formatDateFr, formatMoney } from "../lib/utils";
 import { describeActivity } from "../lib/activityLabels";
+import { BRAND } from "../config/brand";
 
 function StatCard({ icon: Icon, label, value, tone = "cyan", to }) {
   const toneCls = {
@@ -112,7 +113,7 @@ export default function Dashboard() {
       <header className="flex items-end justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-3xl">Bonjour, {agent?.prenom} 👋</h1>
-          <p className="text-ink-dim text-sm mt-1">Voici ton tableau de bord PNM.</p>
+          <p className="text-ink-dim text-sm mt-1">Voici ton tableau de bord {BRAND.name}.</p>
         </div>
       </header>
 
