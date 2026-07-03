@@ -193,7 +193,15 @@ export default function AppLayout() {
           <Outlet />
         </main>
         <footer className="border-t border-line py-4 text-center text-[11px] text-ink-muted">
-          © {new Date().getFullYear()} PNM Sports — Espace agents
+          © {new Date().getFullYear()} PNM Sports — Espace agents ·{" "}
+          <a
+            href={`${import.meta.env.BASE_URL}guide-utilisateur.html`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-cyan-bright"
+          >
+            Guide utilisateur
+          </a>
         </footer>
       </div>
     </div>
