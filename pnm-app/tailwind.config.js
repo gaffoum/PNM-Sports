@@ -5,34 +5,34 @@ export default {
     extend: {
       colors: {
         bg: {
-          0: "#04101f",
-          1: "#06192d",
-          2: "#0a2540",
+          0: "#001C25",
+          1: "#032a35",
+          2: "#063d4a",
         },
-        panel: "#0c2c4a",
+        panel: "#053343",
         teal: {
-          DEFAULT: "#0f3b52",
-          mid: "#1a6b8b",
+          DEFAULT: "#008279",
+          mid: "#009E90",
         },
         cyan: {
-          DEFAULT: "#1ab8e0",
-          bright: "#7ce3ff",
-          deep: "#0e8cb0",
+          DEFAULT: "#00CBB9",
+          bright: "#5EEBDB",
+          deep: "#008279",
         },
-        silver: "#cfe6f2",
+        silver: "#d4f5f0",
         ink: {
-          DEFAULT: "#e7f4fa",
-          dim: "#8aa9bd",
-          muted: "#557388",
+          DEFAULT: "#eafffb",
+          dim: "#8ac4bc",
+          muted: "#4f8a82",
         },
         line: {
-          DEFAULT: "rgba(124, 227, 255, 0.14)",
-          strong: "rgba(124, 227, 255, 0.28)",
+          DEFAULT: "rgba(0, 203, 185, 0.14)",
+          strong: "rgba(0, 203, 185, 0.28)",
         },
       },
       fontFamily: {
-        display: ["Sora", "system-ui", "sans-serif"],
-        body: ["Inter", "system-ui", "sans-serif"],
+        display: ["Space Grotesk", "system-ui", "sans-serif"],
+        body: ["Manrope", "system-ui", "sans-serif"],
       },
       borderRadius: {
         card: "14px",

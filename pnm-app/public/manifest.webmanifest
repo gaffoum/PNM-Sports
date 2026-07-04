@@ -1,7 +1,7 @@
 {
-  "name": "PNM Sports — Espace agents",
-  "short_name": "PNM Sports",
-  "description": "Espace agents PNM Sports : gestion de joueurs, prospection, clubs et pipeline.",
+  "name": "SKRINERS — Espace agents",
+  "short_name": "SKRINERS",
+  "description": "Espace agents SKRINERS : gestion de joueurs, prospection, clubs et pipeline.",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
